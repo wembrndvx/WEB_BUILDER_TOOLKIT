@@ -65,7 +65,7 @@ mcp__figma-desktop__get_design_context({
   nodeId: "781:47496",
   clientLanguages: "html,css",
   clientFrameworks: "vanilla",
-  dirForAssetWrites: "./Figma_Conversion/Conversion/[프로젝트명]/[컴포넌트명]/assets"
+  dirForAssetWrites: "./Figma_Conversion/Static_Components/[프로젝트명]/[컴포넌트명]/assets"
 })
 ```
 
@@ -82,7 +82,7 @@ mcp__figma-desktop__get_screenshot({ nodeId: "781:47496" })
 ## 출력 폴더 구조
 
 ```
-Figma_Conversion/Conversion/
+Figma_Conversion/Static_Components/
 └── [프로젝트명]/
     └── [컴포넌트명]/
         ├── assets/              # SVG, 이미지 에셋 (자동 다운로드)

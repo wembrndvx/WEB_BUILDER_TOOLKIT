@@ -4,9 +4,9 @@ This file provides guidance to Claude Code when working in this repository.
 
 ## Repository Overview
 
-이 저장소는 Figma 디자인을 웹 빌더 런타임 컴포넌트로 변환하는 두 개의 서브모듈로 구성됩니다.
+이 저장소는 Figma 디자인을 웹 빌더 런타임 컴포넌트로 변환하는 두 개의 디렉토리로 구성됩니다.
 
-| 서브모듈 | 역할 | Figma MCP |
+| 디렉토리 | 역할 | Figma MCP |
 |----------|------|-----------|
 | **Figma_Conversion/** | Figma → 정적 HTML/CSS 추출 | 필요 |
 | **RNBT_architecture/** | 정적 → 동적 컴포넌트 변환 + 런타임 | 불필요 |
@@ -34,9 +34,9 @@ This file provides guidance to Claude Code when working in this repository.
 
 ---
 
-## 서브모듈 문서
+## 디렉토리별 문서
 
-각 서브모듈은 독립적으로 작업 가능하며, 상세 문서를 포함합니다:
+각 디렉토리는 독립적으로 작업 가능하며, 상세 문서를 포함합니다:
 
 ### Figma_Conversion
 

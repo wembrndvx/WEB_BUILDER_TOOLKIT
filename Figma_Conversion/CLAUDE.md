@@ -33,7 +33,7 @@ Figma_Conversion/
 ├── .claude/                    # Claude Code 설정
 ├── .vscode/                    # VS Code 설정
 ├── CLAUDE.md                   # 이 문서
-├── Conversion/                 # 변환된 HTML/CSS 결과물
+├── Static_Components/          # 변환된 HTML/CSS 결과물
 │   ├── [Figma-Project-Name]/   # Figma 프로젝트별 폴더
 │   │   └── [component-name]/   # 컴포넌트별 폴더
 │   │       ├── assets/         # SVG, 이미지 에셋
@@ -50,7 +50,7 @@ Figma_Conversion/
 
 ### 예시: HANA_BANK_HIT_Dev 프로젝트
 ```
-Conversion/
+Static_Components/
 ├── HANA_BANK_HIT_Dev/          # Figma 프로젝트명
 │   ├── performance-status/     # 구간별 성능현황 컴포넌트
 │   │   ├── assets/
@@ -662,7 +662,7 @@ Figma metadata에 명시된 **고정 사이즈는 그대로 구현**
 1. MCP 호출
    mcp__figma-desktop__get_design_context({
      nodeId: "781:47496",
-     dirForAssetWrites: "./Conversion/Component/performance-status/assets"
+     dirForAssetWrites: "./Static_Components/Component/performance-status/assets"
    })
    mcp__figma-desktop__get_screenshot({ nodeId: "781:47496" })
 
@@ -824,7 +824,7 @@ const { chromium } = require('playwright');
 
 **컴포넌트별 폴더 구조** (권장):
 ```
-Conversion/Component/performance-status/
+Static_Components/Component/performance-status/
 ├── assets/                    # 에셋 (SVG, 이미지)
 ├── screenshots/               # 스크린샷
 │   └── impl.png              # 구현물 스크린샷 (Playwright)

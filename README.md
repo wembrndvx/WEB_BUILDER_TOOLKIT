@@ -1,21 +1,66 @@
-# FIGMA_INTEGRATED
+# WEB_BUILDER_TOOLKIT
 
 Figma 디자인을 RENOBIT 웹 빌더 런타임 컴포넌트로 변환하는 파이프라인입니다.
+
+---
+
+## 프로젝트 구조
+
+이 저장소는 두 개의 핵심 디렉토리로 구성됩니다.
+
+```
+WEB_BUILDER_TOOLKIT/
+├── CLAUDE.md                   # Claude Code 지침서 (자동 로드)
+├── README.md                   # 이 문서
+├── index.html                  # 프로젝트 포탈 페이지
+├── discussions/                # 설계 논의 문서
+│
+├── Figma_Conversion/           # Figma → 정적 HTML/CSS
+│   ├── CLAUDE.md               # Figma 변환 상세 지침
+│   ├── PUBLISHING_COMPONENT_STRUCTURE.md
+│   ├── Static_Components/      # 변환 결과물
+│   └── package.json            # 의존성 (playwright)
+│
+└── RNBT_architecture/          # 정적 → 동적 컴포넌트 + 런타임
+    ├── CLAUDE.md               # RNBT 작업 지침
+    ├── README.md               # 아키텍처 가이드 (상세)
+    ├── Utils/                  # 공용 유틸리티
+    ├── Components/             # 재사용 컴포넌트
+    ├── Examples/               # 예제 프로젝트
+    └── Projects/               # 실제 프로젝트
+```
+
+| 디렉토리 | 역할 | Figma MCP |
+|----------|------|-----------|
+| **Figma_Conversion/** | Figma → 정적 HTML/CSS 추출 | 필요 |
+| **RNBT_architecture/** | 정적 → 동적 컴포넌트 변환 + 런타임 | 불필요 |
+
+---
+
+## End-to-End Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  1. Figma_Conversion                                                 │
+│                                                                      │
+│     Figma MCP로 디자인 정보 추출 → HTML/CSS 생성 → 스크린샷 검증        │
+│                                                                      │
+│     (순수 퍼블리싱, 스크립트 작업 없음)                                 │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+                               ▼  정적 HTML/CSS 전달
+┌─────────────────────────────────────────────────────────────────────┐
+│  2. RNBT_architecture                                                │
+│                                                                      │
+│     정적 HTML/CSS → 동적 컴포넌트 변환 + 런타임 구성                    │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Claude Code와 함께 사용하기
 
 이 프로젝트는 **Claude Code**와 함께 사용하도록 설계되었습니다.
-
-### CLAUDE.md 방식 vs Agent Skill 방식
-
-| 항목 | CLAUDE.md  | Agent Skill |
-|------|------------------|-------------|
-| **로드 시점** | 항상 (세션 시작 시) | 필요할 때만 |
-| **발견 방식** | 파일 경로 (프로젝트 내) | description 매칭 |
-| **사용 범위** | 이 프로젝트 안에서만 | 어디서든 (설치 시) |
-| **콘텍스트 비용** | 높음 (항상 포함) | 낮음 (선택적) |
 
 ```
 사용 흐름:
@@ -25,6 +70,15 @@ Figma 디자인을 RENOBIT 웹 빌더 런타임 컴포넌트로 변환하는 파
 4. "Figma 링크 줄게" → 변환 작업 수행
 5. 결과 도출
 ```
+
+### CLAUDE.md 방식 vs Agent Skill 방식
+
+| 항목 | CLAUDE.md  | Agent Skill |
+|------|------------------|-------------|
+| **로드 시점** | 항상 (세션 시작 시) | 필요할 때만 |
+| **발견 방식** | 파일 경로 (프로젝트 내) | description 매칭 |
+| **사용 범위** | 이 프로젝트 안에서만 | 어디서든 (설치 시) |
+| **콘텍스트 비용** | 높음 (항상 포함) | 낮음 (선택적) |
 
 ---
 
@@ -66,9 +120,9 @@ claude --version
 ### 4. 프로젝트 Clone 및 의존성 설치
 
 ```bash
-# 1. 프로젝트 클론 (서브모듈 포함)
-git clone --recursive <repository-url>
-cd FIGMA_INTEGRATED
+# 1. 프로젝트 클론
+git clone <repository-url>
+cd WEB_BUILDER_TOOLKIT
 
 # 2. Figma_Conversion 의존성 설치
 cd Figma_Conversion
@@ -116,25 +170,6 @@ claude mcp list
 
 ## 사용 방법
 
-### 기본 워크플로우
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  1. Figma_Conversion                                                 │
-│                                                                      │
-│     Figma MCP로 디자인 정보 추출 → HTML/CSS 생성 → 스크린샷 검증        │
-│                                                                      │
-│     ❌ 스크립트 작업 없음 (순수 퍼블리싱)                               │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-                               ▼  정적 HTML/CSS 전달
-┌─────────────────────────────────────────────────────────────────────┐
-│  2. RNBT_architecture                                                │
-│                                                                      │
-│     정적 HTML/CSS → 동적 컴포넌트 변환 + 런타임 구성                    │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
 ### Step 1: Figma → 정적 HTML/CSS
 
 1. Figma Desktop에서 변환할 요소 선택
@@ -150,7 +185,7 @@ Claude: (MCP로 데이터 추출 → HTML/CSS 생성 → 스크린샷 검증)
 
 결과물 위치:
 ```
-Figma_Conversion/Conversion/[프로젝트명]/[컴포넌트명]/
+Figma_Conversion/Static_Components/[프로젝트명]/[컴포넌트명]/
 ├── assets/                 # SVG, 이미지 에셋
 ├── screenshots/            # 구현 스크린샷
 ├── [컴포넌트명].html
@@ -183,41 +218,17 @@ RNBT_architecture/Projects/[프로젝트명]/page/components/[컴포넌트명]/
 
 ---
 
-## 프로젝트 구조
-
-```
-FIGMA_INTEGRATED/
-├── CLAUDE.md                   # Claude Code 지침서 (자동 로드)
-├── README.md                   # 이 문서
-├── index.html                  # 프로젝트 포탈 페이지
-├── discussions/                # 설계 논의 문서
-│
-├── Figma_Conversion/           # 서브모듈 1: Figma → 정적 HTML/CSS
-│   ├── CLAUDE.md               # Figma 변환 상세 지침
-│   ├── Conversion/             # 변환 결과물
-│   └── package.json            # 의존성 (playwright)
-│
-└── RNBT_architecture/          # 서브모듈 2: 정적 → 동적 컴포넌트
-    ├── CLAUDE.md               # RNBT 작업 지침
-    ├── README.md               # 아키텍처 가이드
-    ├── Utils/                  # 공용 유틸리티
-    ├── Examples/               # 예제 프로젝트
-    └── Projects/               # 실제 프로젝트
-```
-
----
-
-## 서브모듈 문서
+## 디렉토리별 문서
 
 ### Figma_Conversion
 
-- **작업 지침**: `Figma_Conversion/CLAUDE.md`
-- **컴포넌트 구조**: `Figma_Conversion/PUBLISHING_COMPONENT_STRUCTURE.md`
+- **작업 지침**: [Figma_Conversion/CLAUDE.md](Figma_Conversion/CLAUDE.md)
+- **컴포넌트 구조**: [Figma_Conversion/PUBLISHING_COMPONENT_STRUCTURE.md](Figma_Conversion/PUBLISHING_COMPONENT_STRUCTURE.md)
 
 ### RNBT_architecture
 
-- **작업 지침**: `RNBT_architecture/CLAUDE.md`
-- **설계 문서**: `RNBT_architecture/README.md`
+- **작업 지침**: [RNBT_architecture/CLAUDE.md](RNBT_architecture/CLAUDE.md)
+- **설계 문서**: [RNBT_architecture/README.md](RNBT_architecture/README.md)
 
 ---
 
@@ -238,9 +249,9 @@ Figma 디자인 ←→ MCP 서버 ←→ Claude Code ←→ HTML/CSS 코드
 
 ### 왜 MCP가 필요한가?
 
-- ❌ **수동 작업 없이**: 크기, 색상, 간격을 일일이 측정할 필요 없음
-- ✅ **정확한 구현**: Figma 디자인의 정확한 수치를 그대로 사용
-- ⚡ **빠른 개발**: 디자인 → 코드 변환 시간 단축
+- **수동 작업 없이**: 크기, 색상, 간격을 일일이 측정할 필요 없음
+- **정확한 구현**: Figma 디자인의 정확한 수치를 그대로 사용
+- **빠른 개발**: 디자인 → 코드 변환 시간 단축
 
 ---
 
@@ -265,13 +276,6 @@ claude mcp add figma-desktop --transport http --url http://127.0.0.1:3845/mcp
 npx playwright install chromium
 ```
 
-### 서브모듈 누락
-
-```bash
-# 서브모듈 초기화 및 업데이트
-git submodule update --init --recursive
-```
-
 ---
 
 ## 대상 사용자
@@ -292,4 +296,4 @@ git submodule update --init --recursive
 
 ---
 
-*최종 업데이트: 2025-12-26*
+*최종 업데이트: 2026-01-11*

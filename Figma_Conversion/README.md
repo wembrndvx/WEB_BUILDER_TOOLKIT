@@ -10,7 +10,7 @@ Figma 디자인을 HTML/CSS 코드로 변환하는 프로젝트입니다.
 ## 폴더 구조
 
 ```
-Conversion/
+Static_Components/
 ├── [Figma-Project-Name]/   # Figma 프로젝트별
 │   └── [component]/        # 컴포넌트별
 │       ├── assets/

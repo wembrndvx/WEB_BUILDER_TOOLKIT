@@ -14,7 +14,7 @@ Figma MCP는 필요하지 않습니다.
 
 Figma Conversion에서 생성된 정적 파일:
 ```
-Figma_Conversion/Conversion/[프로젝트명]/[컴포넌트명]/
+Figma_Conversion/Static_Components/[프로젝트명]/[컴포넌트명]/
 ├── assets/
 ├── [컴포넌트명].html
 └── [컴포넌트명].css
