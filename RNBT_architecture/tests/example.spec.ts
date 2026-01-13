@@ -445,7 +445,8 @@ console.log('[Component] appendElement accessible in destroy:', !!this.appendEle
   await page.waitForTimeout(500);
 
   // 각 컴포넌트에 라이프사이클 로깅 코드 추가
-  const lc005Components = ['badge_1', 'button_1', 'close_button_1', 'spinners_1'];
+  // badge_1을 마지막에 처리 (기존 CodeBox가 badge_1을 보고 있으면 갱신이 안되므로)
+  const lc005Components = ['button_1', 'close_button_1', 'spinners_1', 'badge_1'];
 
   // 이미 열려있는 CodeBox 탭을 찾거나 새로 열기
   let compCodeBox = page.context().pages().find(p => p.url().includes('#/codeBox'));
