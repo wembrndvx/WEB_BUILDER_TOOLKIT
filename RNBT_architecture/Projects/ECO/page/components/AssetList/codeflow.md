@@ -78,10 +78,10 @@ register.js와 동일한 `{ response: { data: {...} } }` 구조 사용:
 {
     response: {
         data: {
-            title: "ECO 자산 관리",
             items: [...],
             summary: { depth: 1 }
-        }
+        },
+        meta: { locale: "ko" }
     }
 }
 ```

@@ -241,7 +241,6 @@ function initializeHierarchy() {
     const stats = countAssetsByType(items);
 
     HIERARCHY_CACHE = {
-        title: 'ECO 자산 관리',
         items,
         summary: {
             totalAssets: ALL_ASSETS.length,
@@ -886,14 +885,13 @@ app.get('/api/hierarchy', (req, res) => {
 
     res.json({
         data: {
-            title: HIERARCHY_CACHE.title,
             items: translatedItems,
             summary: {
                 ...HIERARCHY_CACHE.summary,
                 depth
-            },
-            meta: { locale }
-        }
+            }
+        },
+        meta: { locale }
     });
 });
 

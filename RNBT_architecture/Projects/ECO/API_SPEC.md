@@ -161,7 +161,6 @@ GET /api/hierarchy?depth={n}&locale={locale}
 ```json
 {
   "data": {
-    "title": "ECO 자산 관리",
     "items": [
       {
         "id": "building-001",

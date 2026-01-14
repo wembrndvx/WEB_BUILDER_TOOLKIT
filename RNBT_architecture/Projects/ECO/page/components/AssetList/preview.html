@@ -134,7 +134,7 @@
                 return { response: json };
             } catch (error) {
                 console.error('[API] fetchHierarchy error:', error);
-                return { response: { data: { title: 'Error', items: [], summary: {} } } };
+                return { response: { data: { items: [], summary: {} } } };
             }
         }
 
