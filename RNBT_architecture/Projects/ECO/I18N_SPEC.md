@@ -251,19 +251,12 @@ columns: [
 | 자산 이름 번역 | ✅ 완료 | 주요 공간(건물/층/방) |
 | typeLabel/statusLabel | ✅ 완료 | 모든 자산에 추가 |
 | nodePath 번역 | ✅ 완료 | 경로도 번역됨 |
-| preview.html 적용 | ⬜ 미적용 | 클라이언트 수정 필요 |
-| register.js 적용 | ⬜ 미적용 | 클라이언트 수정 필요 |
+| preview.html 적용 | ✅ 완료 | locale 선택기, API 파라미터 전달 |
+| register.js 적용 | ✅ 완료 | locale 구독, 이벤트 발행 |
 
 ---
 
 ## 8. 향후 계획
-
-### 클라이언트 적용 시
-
-1. locale 상태 관리 추가 (`window.APP_LOCALE` 또는 GlobalDataPublisher)
-2. API 호출 시 locale 파라미터 전달
-3. 테이블 컬럼에서 `typeLabel`, `statusLabel` 사용
-4. locale 변경 시 데이터 재요청
 
 ### UI 텍스트 다국어 (선택적)
 
@@ -281,3 +274,4 @@ GET /api/i18n/ui?locale=ko&component=AssetList
 |------|------|
 | 2026-01-14 | 초안 작성 - 다국어 설계 명세 |
 | 2026-01-14 | Mock 서버 구현 완료 - 자산 데이터 다국어 적용 |
+| 2026-01-14 | 클라이언트 구현 완료 - preview.html, register.js 적용 |

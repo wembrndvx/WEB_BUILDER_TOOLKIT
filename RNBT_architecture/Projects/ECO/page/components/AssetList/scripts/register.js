@@ -26,7 +26,8 @@ function initComponent() {
     this.subscriptions = {
         'hierarchy': ['renderTree'],
         'hierarchyAssets': ['renderTable'],
-        'hierarchyChildren': ['appendChildren']
+        'hierarchyChildren': ['appendChildren'],
+        'locale': ['setLocale']
     };
 
     // ======================
@@ -43,6 +44,7 @@ function initComponent() {
     this._statusFilter = 'all';
     this._tableInstance = null;
     this._internalHandlers = {};
+    this._locale = 'ko'; // 현재 locale (ko, en, ja)
 
     // ======================
     // 3. TABLE CONFIG
@@ -55,8 +57,8 @@ function initComponent() {
         columns: [
             { title: 'ID', field: 'id', widthGrow: 1, headerSort: true },
             { title: 'Name', field: 'name', widthGrow: 2, headerSort: true },
-            { title: 'Type', field: 'type', widthGrow: 1, headerSort: true, formatter: typeFormatter },
-            { title: 'Status', field: 'status', widthGrow: 1, headerSort: true, formatter: statusFormatter }
+            { title: 'Type', field: 'typeLabel', widthGrow: 1, headerSort: true, formatter: typeFormatter },
+            { title: 'Status', field: 'statusLabel', widthGrow: 1, headerSort: true, formatter: statusFormatter }
         ]
     };
 
@@ -73,6 +75,7 @@ function initComponent() {
     this.search = search.bind(this);
     this.filterByType = filterByType.bind(this);
     this.filterByStatus = filterByStatus.bind(this);
+    this.setLocale = setLocale.bind(this);
 
     // ======================
     // 5. SUBSCRIBE
@@ -176,13 +179,15 @@ function setupInternalHandlers() {
 // FORMATTERS
 // ======================
 function typeFormatter(cell) {
+    const row = cell.getRow().getData();
     const value = cell.getValue();
-    return `<span class="type-badge" data-type="${value}">${value.toUpperCase()}</span>`;
+    return `<span class="type-badge" data-type="${row.type}">${value}</span>`;
 }
 
 function statusFormatter(cell) {
+    const row = cell.getRow().getData();
     const value = cell.getValue();
-    return `<span class="status-badge" data-status="${value}">${value}</span>`;
+    return `<span class="status-badge" data-status="${row.status}">${value}</span>`;
 }
 
 // ======================
@@ -402,9 +407,9 @@ function toggleNode(nodeId, nodeEl) {
         const needsLazyLoad = nodeEl?.dataset.needsLazyLoad === 'true';
 
         if (needsLazyLoad && !this._loadedNodes.has(nodeId)) {
-            // Lazy Loading 요청 이벤트 발행
+            // Lazy Loading 요청 이벤트 발행 (locale 포함)
             Weventbus.emit('@hierarchyChildrenRequested', {
-                event: { nodeId },
+                event: { nodeId, locale: this._locale },
                 targetInstance: this
             });
         }
@@ -427,7 +432,7 @@ function selectNode(nodeId) {
     // 페이지에 노드 선택 이벤트 발행 → 페이지가 hierarchyAssets 데이터 요청
     const node = findNodeById.call(this, nodeId);
     Weventbus.emit('@hierarchyNodeSelected', {
-        event: { nodeId, node },
+        event: { nodeId, node, locale: this._locale },
         targetInstance: this
     });
 }
@@ -550,6 +555,27 @@ function filterByType(type) {
 function filterByStatus(status) {
     this._statusFilter = status;
     applyFilters.call(this);
+}
+
+/**
+ * locale 변경 시 호출 (GlobalDataPublisher 'locale' topic 구독)
+ * @param {{ response: { data: { locale: string } } }} param
+ */
+function setLocale({ response }) {
+    const { data } = response;
+    if (!data || !data.locale) return;
+
+    this._locale = data.locale;
+    console.log('[AssetList] Locale changed:', this._locale);
+
+    // 트리 상태 초기화 후 재로드 요청 이벤트 발행
+    this._expandedNodes.clear();
+    this._loadedNodes.clear();
+
+    Weventbus.emit('@localeChanged', {
+        event: { locale: this._locale },
+        targetInstance: this
+    });
 }
 
 // ======================
