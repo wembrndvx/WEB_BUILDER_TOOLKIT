@@ -84,9 +84,16 @@
            │    ├── ⚡ Circuit A2 (circuit, canHaveChildren=false)
            │    └── ⚡ Circuit B1 (circuit, canHaveChildren=false)
            └── 🔌 PDU 004 (pdu, canHaveChildren=false) ← 말단 PDU
+
+🚪 독립 전산실 (room, parentId=null, canHaveChildren=true) ← 케이스 4: 독립 공간
+ ├── 🗄️ Rack I-01 (rack, canHaveChildren=true)
+ │    └── 🖥️ Server I-01 (server, canHaveChildren=false)
+ └── ❄️ CRAC I-01 (crac, canHaveChildren=false)
 ```
 
-**참고**: 같은 타입(예: PDU)도 상황에 따라 컨테이너/말단이 될 수 있습니다.
+**참고**:
+- 같은 타입(예: PDU)도 상황에 따라 컨테이너/말단이 될 수 있습니다.
+- 케이스 4: 독립 공간은 Building 없이 root-level에 Room이 직접 존재하는 경우입니다.
 
 ---
 
@@ -141,12 +148,13 @@
 ### Request
 
 ```
-GET /api/hierarchy?depth={n}
+GET /api/hierarchy?depth={n}&locale={locale}
 ```
 
 | 파라미터 | 타입 | 기본값 | 설명 |
 |----------|------|--------|------|
 | depth | number | 2 | 반환할 트리 깊이 (1: 루트만, 2: 루트+1레벨, ...) |
+| locale | string | "ko" | 다국어 코드 (`ko`, `en`, `ja`) - [I18N_SPEC.md](I18N_SPEC.md) 참조 |
 
 ### Response
 
@@ -159,22 +167,38 @@ GET /api/hierarchy?depth={n}
         "id": "building-001",
         "name": "본관",
         "type": "building",
+        "typeLabel": "건물",
         "canHaveChildren": true,
         "hasChildren": true,
         "parentId": null,
         "status": "warning",
+        "statusLabel": "경고",
         "children": [
           {
             "id": "floor-001-01",
             "name": "1층",
             "type": "floor",
+            "typeLabel": "층",
             "canHaveChildren": true,
             "hasChildren": true,
             "parentId": "building-001",
             "status": "warning",
+            "statusLabel": "경고",
             "children": []
           }
         ]
+      },
+      {
+        "id": "room-independent-01",
+        "name": "독립 전산실",
+        "type": "room",
+        "typeLabel": "방",
+        "canHaveChildren": true,
+        "hasChildren": true,
+        "parentId": null,
+        "status": "normal",
+        "statusLabel": "정상",
+        "children": []
       }
     ],
     "summary": {
@@ -183,6 +207,9 @@ GET /api/hierarchy?depth={n}
       "terminals": 30,
       "byType": { "building": 3, "floor": 6, "room": 6, "rack": 4, "server": 6, "ups": 4, "pdu": 5, "crac": 4, "sensor": 8 }
     }
+  },
+  "meta": {
+    "locale": "ko"
   }
 }
 ```
@@ -192,13 +219,16 @@ GET /api/hierarchy?depth={n}
 | Field | Type | Description |
 |-------|------|-------------|
 | id | string | 자산 ID |
-| name | string | 자산 이름 |
+| name | string | 자산 이름 (locale에 따라 번역됨) |
 | type | string | 자산 타입 |
+| typeLabel | string | 타입 라벨 (locale에 따라 번역됨) |
 | canHaveChildren | boolean | 컨테이너 여부 (Tree 노드 펼침 가능 여부) |
 | hasChildren | boolean | 하위 자산 존재 여부 (Lazy Loading 판단용) |
-| parentId | string | 부모 자산 ID |
+| parentId | string | 부모 자산 ID (독립 공간인 경우 null) |
 | status | string | 상태 (`normal` \| `warning` \| `critical`) |
+| statusLabel | string | 상태 라벨 (locale에 따라 번역됨) |
 | children | array | depth 범위 내 하위 자산 (범위 밖이면 빈 배열) |
+| meta.locale | string | 응답에 적용된 언어 코드 |
 
 ### Lazy Loading 동작 원리
 
@@ -223,8 +253,12 @@ GET /api/hierarchy?depth={n}
 ### Request
 
 ```
-GET /api/hierarchy/:nodeId/children
+GET /api/hierarchy/:nodeId/children?locale={locale}
 ```
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| locale | string | "ko" | 다국어 코드 (`ko`, `en`, `ja`) |
 
 ### Response
 
@@ -237,21 +271,28 @@ GET /api/hierarchy/:nodeId/children
         "id": "room-001-01-01",
         "name": "서버실 A",
         "type": "room",
+        "typeLabel": "방",
         "canHaveChildren": true,
         "hasChildren": true,
         "parentId": "floor-001-01",
-        "status": "warning"
+        "status": "warning",
+        "statusLabel": "경고"
       },
       {
         "id": "room-001-01-02",
         "name": "네트워크실",
         "type": "room",
+        "typeLabel": "방",
         "canHaveChildren": true,
         "hasChildren": true,
         "parentId": "floor-001-01",
-        "status": "normal"
+        "status": "normal",
+        "statusLabel": "정상"
       }
     ]
+  },
+  "meta": {
+    "locale": "ko"
   }
 }
 ```
@@ -263,11 +304,15 @@ GET /api/hierarchy/:nodeId/children
 ### Request
 
 ```
-GET /api/hierarchy/:nodeId/assets
+GET /api/hierarchy/:nodeId/assets?locale={locale}
 ```
 
 **Parameters**:
 - `nodeId`: 노드 ID (예: `building-001`, `floor-001-01`, `room-001-01-01`)
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| locale | string | "ko" | 다국어 코드 (`ko`, `en`, `ja`) |
 
 ### Response
 
@@ -278,30 +323,37 @@ GET /api/hierarchy/:nodeId/assets
     "nodeName": "서버실 A",
     "nodePath": "본관 > 1층 > 서버실 A",
     "nodeType": "room",
+    "nodeTypeLabel": "방",
     "assets": [
       {
         "id": "rack-001",
         "name": "Rack A-01",
         "type": "rack",
+        "typeLabel": "랙",
         "canHaveChildren": true,
         "parentId": "room-001-01-01",
-        "status": "normal"
+        "status": "normal",
+        "statusLabel": "정상"
       },
       {
         "id": "server-001",
         "name": "Server 001",
         "type": "server",
+        "typeLabel": "서버",
         "canHaveChildren": false,
         "parentId": "rack-001",
-        "status": "normal"
+        "status": "normal",
+        "statusLabel": "정상"
       },
       {
         "id": "pdu-002",
         "name": "PDU 002 (Standalone)",
         "type": "pdu",
+        "typeLabel": "PDU",
         "canHaveChildren": false,
         "parentId": "room-001-01-01",
-        "status": "warning"
+        "status": "warning",
+        "statusLabel": "경고"
       }
     ],
     "summary": {
@@ -309,6 +361,9 @@ GET /api/hierarchy/:nodeId/assets
       "byType": { "rack": 2, "server": 5, "pdu": 1, "crac": 1, "sensor": 1 },
       "byStatus": { "normal": 8, "warning": 2, "critical": 0 }
     }
+  },
+  "meta": {
+    "locale": "ko"
   }
 }
 ```
@@ -318,11 +373,13 @@ GET /api/hierarchy/:nodeId/assets
 | Field | Type | Description |
 |-------|------|-------------|
 | nodeId | string | 노드 ID |
-| nodeName | string | 노드 이름 |
-| nodePath | string | 경로 (breadcrumb) |
+| nodeName | string | 노드 이름 (locale에 따라 번역됨) |
+| nodePath | string | 경로 (breadcrumb, locale에 따라 번역됨) |
 | nodeType | string | 노드 타입 |
+| nodeTypeLabel | string | 노드 타입 라벨 (locale에 따라 번역됨) |
 | assets | array | 하위 모든 자산 (컨테이너 + 말단, 플랫 목록) |
 | summary | object | 자산 요약 |
+| meta.locale | string | 응답에 적용된 언어 코드 |
 
 ---
 
@@ -771,6 +828,33 @@ Available endpoints:
 
 ---
 
+## 다국어(i18n) 지원
+
+모든 Hierarchy API는 `locale` 쿼리 파라미터를 지원합니다.
+
+자세한 내용은 [I18N_SPEC.md](I18N_SPEC.md) 참조.
+
+### 지원 언어
+
+```
+GET /api/i18n/locales
+```
+
+```json
+{
+  "data": {
+    "available": [
+      { "code": "ko", "name": "한국어", "default": true },
+      { "code": "en", "name": "English" },
+      { "code": "ja", "name": "日本語" }
+    ],
+    "default": "ko"
+  }
+}
+```
+
+---
+
 ## 변경 이력
 
 | 날짜 | 내용 |
@@ -778,3 +862,5 @@ Available endpoints:
 | 2025-12-22 | 초안 작성 - 기본 API 정의 |
 | 2026-01-14 | "모든 것은 자산" 설계 원칙 반영, Lazy Loading API 추가 |
 | 2026-01-14 | AssetPanelAPI.md 내용 통합 |
+| 2026-01-14 | 다국어(i18n) 지원 추가 - locale 파라미터, typeLabel/statusLabel 필드 |
+| 2026-01-14 | 독립 공간(케이스 4: root-level room) 문서화 |

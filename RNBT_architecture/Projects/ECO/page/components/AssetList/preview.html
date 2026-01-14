@@ -112,512 +112,60 @@
         </div>
     </div>
 
-    <!-- Mock Data (모든 것이 자산) -->
+    <!-- API Client -->
     <script>
-        /**
-         * 핵심 원칙: 모든 것은 자산(Asset)
-         * - canHaveChildren: true → Tree에 표시 (컨테이너)
-         * - canHaveChildren: false → Table에만 표시 (말단)
-         * - 자산은 개별로 존재하거나 다른 자산에 포함될 수 있음
-         *
-         * 다양한 케이스:
-         * 1. Building > Floor > Room (공간 계층)
-         * 2. Room > Rack > Server (장비 계층)
-         * 3. Room > PDU (개별 존재)
-         * 4. Rack > PDU (포함 관계)
-         * 5. PDU > Circuit (PDU가 컨테이너)
-         */
-
-        const randomStatus = () => ['normal', 'normal', 'normal', 'warning', 'critical'][Math.floor(Math.random() * 5)];
-
-        // 전체 계층 구조 (서버 내부 데이터)
-        const FULL_HIERARCHY = {
-            title: "ECO 자산 관리",
-            items: [
-                // ========================================
-                // 케이스 1: 본관 - 전통적인 공간 계층
-                // Building > Floor > Room > Rack > Server
-                // ========================================
-                {
-                    id: "building-001", name: "본관", type: "building",
-                    canHaveChildren: true, parentId: null, status: "warning",
-                    children: [
-                        {
-                            id: "floor-001-01", name: "1층", type: "floor",
-                            canHaveChildren: true, parentId: "building-001", status: "warning",
-                            children: [
-                                {
-                                    id: "room-001-01-01", name: "서버실 A", type: "room",
-                                    canHaveChildren: true, parentId: "floor-001-01", status: "warning",
-                                    children: [
-                                        // Rack은 컨테이너 (Server를 포함)
-                                        {
-                                            id: "rack-001", name: "Rack A-01", type: "rack",
-                                            canHaveChildren: true, parentId: "room-001-01-01", status: "normal",
-                                            children: [
-                                                { id: "server-001", name: "Server 001", type: "server", canHaveChildren: false, parentId: "rack-001", status: randomStatus() },
-                                                { id: "server-002", name: "Server 002", type: "server", canHaveChildren: false, parentId: "rack-001", status: randomStatus() },
-                                                { id: "server-003", name: "Server 003", type: "server", canHaveChildren: false, parentId: "rack-001", status: randomStatus() }
-                                            ]
-                                        },
-                                        {
-                                            id: "rack-002", name: "Rack A-02", type: "rack",
-                                            canHaveChildren: true, parentId: "room-001-01-01", status: "warning",
-                                            children: [
-                                                { id: "server-004", name: "Server 004", type: "server", canHaveChildren: false, parentId: "rack-002", status: randomStatus() },
-                                                { id: "server-005", name: "Server 005", type: "server", canHaveChildren: false, parentId: "rack-002", status: randomStatus() },
-                                                // PDU가 Rack 안에 포함된 케이스
-                                                { id: "pdu-001", name: "PDU 001 (In-Rack)", type: "pdu", canHaveChildren: false, parentId: "rack-002", status: randomStatus() }
-                                            ]
-                                        },
-                                        // PDU가 Room에 직접 존재하는 케이스 (Rack 밖)
-                                        { id: "pdu-002", name: "PDU 002 (Standalone)", type: "pdu", canHaveChildren: false, parentId: "room-001-01-01", status: randomStatus() },
-                                        // CRAC, Sensor는 말단 자산
-                                        { id: "crac-001", name: "CRAC 001", type: "crac", canHaveChildren: false, parentId: "room-001-01-01", status: randomStatus() },
-                                        { id: "sensor-001", name: "Sensor 001", type: "sensor", canHaveChildren: false, parentId: "room-001-01-01", status: randomStatus() }
-                                    ]
-                                },
-                                {
-                                    id: "room-001-01-02", name: "네트워크실", type: "room",
-                                    canHaveChildren: true, parentId: "floor-001-01", status: "normal",
-                                    children: [
-                                        // 네트워크 장비 전용 Rack
-                                        {
-                                            id: "rack-003", name: "Network Rack 01", type: "rack",
-                                            canHaveChildren: true, parentId: "room-001-01-02", status: "normal",
-                                            children: [
-                                                { id: "switch-001", name: "Switch 001", type: "switch", canHaveChildren: false, parentId: "rack-003", status: randomStatus() },
-                                                { id: "switch-002", name: "Switch 002", type: "switch", canHaveChildren: false, parentId: "rack-003", status: randomStatus() },
-                                                { id: "router-001", name: "Router 001", type: "router", canHaveChildren: false, parentId: "rack-003", status: randomStatus() }
-                                            ]
-                                        },
-                                        { id: "ups-001", name: "UPS 001", type: "ups", canHaveChildren: false, parentId: "room-001-01-02", status: randomStatus() },
-                                        { id: "sensor-002", name: "Sensor 002", type: "sensor", canHaveChildren: false, parentId: "room-001-01-02", status: randomStatus() }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            id: "floor-001-02", name: "2층", type: "floor",
-                            canHaveChildren: true, parentId: "building-001", status: "normal",
-                            children: [
-                                {
-                                    id: "room-001-02-01", name: "UPS실", type: "room",
-                                    canHaveChildren: true, parentId: "floor-001-02", status: "normal",
-                                    children: [
-                                        // UPS는 말단 자산 (다른 것을 포함하지 않음)
-                                        { id: "ups-002", name: "UPS 002", type: "ups", canHaveChildren: false, parentId: "room-001-02-01", status: randomStatus() },
-                                        { id: "ups-003", name: "UPS 003", type: "ups", canHaveChildren: false, parentId: "room-001-02-01", status: randomStatus() },
-                                        { id: "ups-004", name: "UPS 004", type: "ups", canHaveChildren: false, parentId: "room-001-02-01", status: randomStatus() },
-                                        { id: "sensor-003", name: "Sensor 003", type: "sensor", canHaveChildren: false, parentId: "room-001-02-01", status: randomStatus() }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                },
-
-                // ========================================
-                // 케이스 2: 별관 A - PDU가 컨테이너 역할
-                // Room > PDU > Circuit (PDU가 회로를 포함)
-                // ========================================
-                {
-                    id: "building-002", name: "별관 A", type: "building",
-                    canHaveChildren: true, parentId: null, status: "critical",
-                    children: [
-                        {
-                            id: "floor-002-01", name: "1층", type: "floor",
-                            canHaveChildren: true, parentId: "building-002", status: "critical",
-                            children: [
-                                {
-                                    id: "room-002-01-01", name: "전산실", type: "room",
-                                    canHaveChildren: true, parentId: "floor-002-01", status: "critical",
-                                    children: [
-                                        // PDU가 컨테이너 역할 (회로/분기를 포함)
-                                        {
-                                            id: "pdu-003", name: "PDU 003 (Main)", type: "pdu",
-                                            canHaveChildren: true, parentId: "room-002-01-01", status: "warning",
-                                            children: [
-                                                { id: "circuit-001", name: "Circuit A1", type: "circuit", canHaveChildren: false, parentId: "pdu-003", status: randomStatus() },
-                                                { id: "circuit-002", name: "Circuit A2", type: "circuit", canHaveChildren: false, parentId: "pdu-003", status: randomStatus() },
-                                                { id: "circuit-003", name: "Circuit B1", type: "circuit", canHaveChildren: false, parentId: "pdu-003", status: randomStatus() }
-                                            ]
-                                        },
-                                        // 일반 PDU (말단)
-                                        { id: "pdu-004", name: "PDU 004", type: "pdu", canHaveChildren: false, parentId: "room-002-01-01", status: randomStatus() },
-                                        { id: "crac-002", name: "CRAC 002", type: "crac", canHaveChildren: false, parentId: "room-002-01-01", status: "critical" }
-                                    ]
-                                },
-                                {
-                                    id: "room-002-01-02", name: "항온항습실", type: "room",
-                                    canHaveChildren: true, parentId: "floor-002-01", status: "normal",
-                                    children: [
-                                        { id: "crac-003", name: "CRAC 003", type: "crac", canHaveChildren: false, parentId: "room-002-01-02", status: randomStatus() },
-                                        { id: "crac-004", name: "CRAC 004", type: "crac", canHaveChildren: false, parentId: "room-002-01-02", status: randomStatus() },
-                                        { id: "sensor-004", name: "Sensor 004", type: "sensor", canHaveChildren: false, parentId: "room-002-01-02", status: randomStatus() },
-                                        { id: "sensor-005", name: "Sensor 005", type: "sensor", canHaveChildren: false, parentId: "room-002-01-02", status: randomStatus() }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                },
-
-                // ========================================
-                // 케이스 3: 별관 B - 혼합 구조
-                // 깊은 계층 + 빈 컨테이너
-                // ========================================
-                {
-                    id: "building-003", name: "별관 B", type: "building",
-                    canHaveChildren: true, parentId: null, status: "normal",
-                    children: [
-                        {
-                            id: "floor-003-01", name: "1층", type: "floor",
-                            canHaveChildren: true, parentId: "building-003", status: "normal",
-                            children: [
-                                {
-                                    id: "room-003-01-01", name: "통합관제실", type: "room",
-                                    canHaveChildren: true, parentId: "floor-003-01", status: "normal",
-                                    children: [
-                                        // 캐비넷(컨테이너) 안에 여러 장비
-                                        {
-                                            id: "cabinet-001", name: "Cabinet 001", type: "cabinet",
-                                            canHaveChildren: true, parentId: "room-003-01-01", status: "normal",
-                                            children: [
-                                                { id: "server-006", name: "Server 006", type: "server", canHaveChildren: false, parentId: "cabinet-001", status: randomStatus() },
-                                                { id: "storage-001", name: "Storage 001", type: "storage", canHaveChildren: false, parentId: "cabinet-001", status: randomStatus() },
-                                                { id: "pdu-005", name: "PDU 005", type: "pdu", canHaveChildren: false, parentId: "cabinet-001", status: randomStatus() }
-                                            ]
-                                        },
-                                        // 독립 센서들
-                                        { id: "sensor-006", name: "Temp Sensor", type: "sensor", canHaveChildren: false, parentId: "room-003-01-01", status: randomStatus() },
-                                        { id: "sensor-007", name: "Humidity Sensor", type: "sensor", canHaveChildren: false, parentId: "room-003-01-01", status: randomStatus() },
-                                        { id: "sensor-008", name: "Power Meter", type: "sensor", canHaveChildren: false, parentId: "room-003-01-01", status: randomStatus() }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            // 빈 층 (하위 자산 없음, 하지만 canHaveChildren=true)
-                            id: "floor-003-02", name: "2층 (비어있음)", type: "floor",
-                            canHaveChildren: true, parentId: "building-003", status: "normal",
-                            children: []
-                        }
-                    ]
-                },
-
-                // ========================================
-                // 케이스 4: 독립 공간 - 건물 없이 바로 방
-                // 루트 레벨에 room이 직접 존재
-                // ========================================
-                {
-                    id: "room-independent-01", name: "외부 창고", type: "room",
-                    canHaveChildren: true, parentId: null, status: "normal",
-                    children: [
-                        { id: "storage-002", name: "Storage 002", type: "storage", canHaveChildren: false, parentId: "room-independent-01", status: randomStatus() },
-                        { id: "sensor-009", name: "Temp Sensor", type: "sensor", canHaveChildren: false, parentId: "room-independent-01", status: randomStatus() }
-                    ]
-                },
-                {
-                    id: "room-independent-02", name: "야외 발전기실", type: "room",
-                    canHaveChildren: true, parentId: null, status: "warning",
-                    children: [
-                        { id: "ups-005", name: "UPS 005 (Outdoor)", type: "ups", canHaveChildren: false, parentId: "room-independent-02", status: randomStatus() },
-                        { id: "pdu-006", name: "PDU 006 (Outdoor)", type: "pdu", canHaveChildren: false, parentId: "room-independent-02", status: randomStatus() },
-                        { id: "sensor-010", name: "Power Meter", type: "sensor", canHaveChildren: false, parentId: "room-independent-02", status: "warning" }
-                    ]
-                }
-            ]
-        };
-
-        // hasChildren 필드 자동 계산 (모든 children 기준)
-        function addHasChildren(items) {
-            if (!items) return;
-            items.forEach(item => {
-                // 모든 children 카운트 (Tree에 모든 자산 표시)
-                const allChildren = item.children || [];
-                item.hasChildren = allChildren.length > 0;
-                if (item.children) addHasChildren(item.children);
-            });
-        }
-        addHasChildren(FULL_HIERARCHY.items);
-
-        /**
-         * depth 제한된 트리 반환 (API 시뮬레이션)
-         * - 모든 자산을 Tree에 포함 (canHaveChildren 관계없이)
-         * @param {number} maxDepth - 최대 depth (기본: 2)
-         */
-        function getHierarchyWithDepth(maxDepth = 2) {
-            function limitDepth(items, currentDepth = 1) {
-                if (!items) return [];
-
-                // 모든 자산 포함
-                return items.map(item => {
-                    const allChildren = item.children || [];
-
-                    const result = {
-                        id: item.id,
-                        name: item.name,
-                        type: item.type,
-                        canHaveChildren: item.canHaveChildren,
-                        hasChildren: allChildren.length > 0,
-                        parentId: item.parentId,
-                        status: item.status
-                    };
-
-                    if (currentDepth < maxDepth && allChildren.length > 0) {
-                        result.children = limitDepth(allChildren, currentDepth + 1);
-                    } else {
-                        result.children = [];
-                    }
-                    return result;
-                });
-            }
-
-            return {
-                title: FULL_HIERARCHY.title,
-                items: limitDepth(FULL_HIERARCHY.items),
-                summary: { depth: maxDepth }
-            };
-        }
-
-        /**
-         * 특정 노드의 직속 children 반환 (Lazy Loading API 시뮬레이션)
-         * - 모든 자산 반환 (canHaveChildren 관계없이)
-         * @param {string} nodeId - 부모 노드 ID
-         */
-        function getNodeChildren(nodeId) {
-            const node = findNodeInHierarchy(FULL_HIERARCHY.items, nodeId);
-            if (!node || !node.children) return { parentId: nodeId, children: [] };
-
-            // 모든 자산 반환
-            const allChildren = node.children.map(child => {
-                const subChildren = child.children || [];
-                return {
-                    id: child.id,
-                    name: child.name,
-                    type: child.type,
-                    canHaveChildren: child.canHaveChildren,
-                    hasChildren: subChildren.length > 0,
-                    parentId: nodeId,
-                    status: child.status
-                };
-            });
-
-            return { parentId: nodeId, children: allChildren };
-        }
+        // ======================
+        // API Configuration
+        // ======================
+        const API_BASE = 'http://localhost:4004/api';
 
         // ======================
-        // Mock API (Promise 기반)
-        // register.js 응답 구조와 동일: { response: { data: ... } }
+        // API Functions (실제 Mock Server 호출)
         // ======================
-
-        const MOCK_DELAY = 300; // 네트워크 지연 시뮬레이션 (ms)
 
         /**
          * GET /api/hierarchy?depth=n&locale=ko
          * 트리 계층 조회 (depth 제한, 다국어 지원)
          */
-        function fetchHierarchy(depth = 1, locale = 'ko') {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    const result = getHierarchyWithDepth(depth);
-                    // 다국어 적용
-                    const translatedItems = applyI18nToTree(result.items, locale);
-                    resolve({
-                        response: {
-                            data: {
-                                title: result.title,
-                                items: translatedItems,
-                                summary: result.summary,
-                                meta: { locale }
-                            }
-                        }
-                    });
-                }, MOCK_DELAY);
-            });
+        async function fetchHierarchy(depth = 1, locale = 'ko') {
+            try {
+                const res = await fetch(`${API_BASE}/hierarchy?depth=${depth}&locale=${locale}`);
+                const json = await res.json();
+                return { response: json };
+            } catch (error) {
+                console.error('[API] fetchHierarchy error:', error);
+                return { response: { data: { title: 'Error', items: [], summary: {} } } };
+            }
         }
 
         /**
          * GET /api/hierarchy/:nodeId/children?locale=ko
          * 노드의 직속 children 조회 (Lazy Loading, 다국어 지원)
          */
-        function fetchNodeChildren(nodeId, locale = 'ko') {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    const result = getNodeChildren(nodeId);
-                    // 다국어 적용
-                    const translatedChildren = result.children.map(child => applyI18nToAsset(child, locale));
-                    resolve({
-                        response: {
-                            data: {
-                                parentId: result.parentId,
-                                children: translatedChildren
-                            },
-                            meta: { locale }
-                        }
-                    });
-                }, MOCK_DELAY);
-            });
+        async function fetchNodeChildren(nodeId, locale = 'ko') {
+            try {
+                const res = await fetch(`${API_BASE}/hierarchy/${nodeId}/children?locale=${locale}`);
+                const json = await res.json();
+                return { response: json };
+            } catch (error) {
+                console.error('[API] fetchNodeChildren error:', error);
+                return { response: { data: { parentId: nodeId, children: [] } } };
+            }
         }
 
         /**
          * GET /api/hierarchy/:nodeId/assets?locale=ko
          * 노드 하위의 모든 자산 조회 (Table용, 다국어 지원)
          */
-        function fetchNodeAssets(nodeId, locale = 'ko') {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    const node = findNodeInHierarchy(FULL_HIERARCHY.items, nodeId);
-                    const nodePath = getNodePathFromHierarchy(FULL_HIERARCHY.items, nodeId, [], locale);
-                    const assets = collectAssetsForNode(nodeId);
-                    // 다국어 적용
-                    const translatedAssets = assets.map(asset => applyI18nToAsset(asset, locale));
-                    const translatedNode = node ? applyI18nToAsset(node, locale) : null;
-
-                    resolve({
-                        response: {
-                            data: {
-                                nodeId,
-                                nodeName: translatedNode?.name || '',
-                                nodePath,
-                                nodeType: node?.type || '',
-                                nodeTypeLabel: translatedNode?.typeLabel || '',
-                                assets: translatedAssets,
-                                summary: {
-                                    total: assets.length,
-                                    byStatus: countByStatus(assets)
-                                }
-                            },
-                            meta: { locale }
-                        }
-                    });
-                }, MOCK_DELAY);
-            });
-        }
-
-        // ======================
-        // I18N DATA & FUNCTIONS
-        // ======================
-        const I18N_DATA = {
-            names: {
-                'building-001': { ko: '본관', en: 'Main Building', ja: '本館' },
-                'building-002': { ko: '별관 A', en: 'Annex A', ja: '別館A' },
-                'building-003': { ko: '별관 B', en: 'Annex B', ja: '別館B' },
-                'floor-001-01': { ko: '1층', en: '1st Floor', ja: '1階' },
-                'floor-001-02': { ko: '2층', en: '2nd Floor', ja: '2階' },
-                'floor-002-01': { ko: '1층', en: '1st Floor', ja: '1階' },
-                'floor-003-01': { ko: '1층', en: '1st Floor', ja: '1階' },
-                'floor-003-02': { ko: '2층 (비어있음)', en: '2nd Floor (Empty)', ja: '2階（空き）' },
-                'room-001-01-01': { ko: '서버실 A', en: 'Server Room A', ja: 'サーバールームA' },
-                'room-001-01-02': { ko: '네트워크실', en: 'Network Room', ja: 'ネットワーク室' },
-                'room-001-02-01': { ko: 'UPS실', en: 'UPS Room', ja: 'UPS室' },
-                'room-002-01-01': { ko: '전산실', en: 'Computer Room', ja: '電算室' },
-                'room-002-01-02': { ko: '항온항습실', en: 'HVAC Room', ja: '空調室' },
-                'room-003-01-01': { ko: '통합관제실', en: 'Control Room', ja: '統合管制室' },
-                // 독립 공간 (root level rooms)
-                'room-independent-01': { ko: '외부 창고', en: 'External Warehouse', ja: '外部倉庫' },
-                'room-independent-02': { ko: '야외 발전기실', en: 'Outdoor Generator Room', ja: '屋外発電機室' }
-            },
-            types: {
-                ko: { building: '건물', floor: '층', room: '방', rack: '랙', cabinet: '캐비넷',
-                      server: '서버', storage: '스토리지', switch: '스위치', router: '라우터',
-                      ups: 'UPS', pdu: 'PDU', crac: '항온항습기', sensor: '센서', circuit: '회로' },
-                en: { building: 'Building', floor: 'Floor', room: 'Room', rack: 'Rack', cabinet: 'Cabinet',
-                      server: 'Server', storage: 'Storage', switch: 'Switch', router: 'Router',
-                      ups: 'UPS', pdu: 'PDU', crac: 'CRAC', sensor: 'Sensor', circuit: 'Circuit' },
-                ja: { building: 'ビル', floor: 'フロア', room: '部屋', rack: 'ラック', cabinet: 'キャビネット',
-                      server: 'サーバー', storage: 'ストレージ', switch: 'スイッチ', router: 'ルーター',
-                      ups: 'UPS', pdu: 'PDU', crac: '空調機', sensor: 'センサー', circuit: '回路' }
-            },
-            statuses: {
-                ko: { normal: '정상', warning: '경고', critical: '위험' },
-                en: { normal: 'Normal', warning: 'Warning', critical: 'Critical' },
-                ja: { normal: '正常', warning: '警告', critical: '危険' }
+        async function fetchNodeAssets(nodeId, locale = 'ko') {
+            try {
+                const res = await fetch(`${API_BASE}/hierarchy/${nodeId}/assets?locale=${locale}`);
+                const json = await res.json();
+                return { response: json };
+            } catch (error) {
+                console.error('[API] fetchNodeAssets error:', error);
+                return { response: { data: { nodeId, nodeName: '', nodePath: '', assets: [], summary: {} } } };
             }
-        };
-
-        function applyI18nToAsset(asset, locale = 'ko') {
-            const typeLabels = I18N_DATA.types[locale] || I18N_DATA.types['ko'];
-            const statusLabels = I18N_DATA.statuses[locale] || I18N_DATA.statuses['ko'];
-            const nameI18n = I18N_DATA.names[asset.id];
-            return {
-                ...asset,
-                name: nameI18n ? (nameI18n[locale] || nameI18n['ko'] || asset.name) : asset.name,
-                typeLabel: typeLabels[asset.type] || asset.type,
-                statusLabel: statusLabels[asset.status] || asset.status
-            };
-        }
-
-        function applyI18nToTree(items, locale = 'ko') {
-            return items.map(item => {
-                const translated = applyI18nToAsset(item, locale);
-                if (item.children && item.children.length > 0) {
-                    translated.children = applyI18nToTree(item.children, locale);
-                }
-                return translated;
-            });
-        }
-
-        // ======================
-        // 내부 헬퍼 함수들
-        // ======================
-
-        function collectAssetsForNode(nodeId) {
-            const node = findNodeInHierarchy(FULL_HIERARCHY.items, nodeId);
-            if (!node) return [];
-
-            const assets = [];
-
-            function collect(item) {
-                if (item.id !== nodeId) {
-                    assets.push({
-                        id: item.id,
-                        name: item.name,
-                        type: item.type,
-                        parentId: item.parentId,
-                        canHaveChildren: item.canHaveChildren,
-                        status: item.status
-                    });
-                }
-                if (item.children && item.children.length > 0) {
-                    item.children.forEach(child => collect(child));
-                }
-            }
-
-            collect(node);
-            return assets;
-        }
-
-        function getNodePathFromHierarchy(items, targetId, path = [], locale = 'ko') {
-            for (const item of items || []) {
-                const translated = applyI18nToAsset(item, locale);
-                const currentPath = [...path, translated.name];
-                if (item.id === targetId) return currentPath.join(' > ');
-                if (item.children) {
-                    const found = getNodePathFromHierarchy(item.children, targetId, currentPath, locale);
-                    if (found) return found;
-                }
-            }
-            return null;
-        }
-
-        function countByStatus(assets) {
-            return assets.reduce((acc, a) => {
-                acc[a.status] = (acc[a.status] || 0) + 1;
-                return acc;
-            }, {});
-        }
-
-        function findNodeInHierarchy(items, targetId) {
-            for (const item of items || []) {
-                if (item.id === targetId) return item;
-                if (item.children) {
-                    const found = findNodeInHierarchy(item.children, targetId);
-                    if (found) return found;
-                }
-            }
-            return null;
         }
     </script>
 
