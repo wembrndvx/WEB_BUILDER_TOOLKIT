@@ -57,138 +57,148 @@ let ALL_ASSETS = [];  // 모든 자산 (canHaveChildren 관계없이)
 // HIERARCHY DATA GENERATORS
 // ======================
 
+// 대량 데이터 생성 설정
+const DATA_CONFIG = {
+    buildings: 25,           // 건물 수
+    floorsPerBuilding: 5,    // 건물당 층 수
+    roomsPerFloor: 4,        // 층당 방 수
+    racksPerRoom: 3,         // 방당 랙 수
+    serversPerRack: 8,       // 랙당 서버 수
+    // 방당 추가 장비
+    pdusPerRoom: 2,
+    upsPerRoom: 1,
+    cracsPerRoom: 2,
+    sensorsPerRoom: 4
+};
+
+// 건물 이름 생성기
+const BUILDING_NAMES = [
+    '본관', '별관 A', '별관 B', '신관', '구관',
+    '동관', '서관', '남관', '북관', '중앙관',
+    'IDC-A', 'IDC-B', 'IDC-C', 'IDC-D', 'IDC-E',
+    'DC Tower A', 'DC Tower B', 'DC Tower C',
+    '데이터센터 1', '데이터센터 2', '데이터센터 3',
+    '통합관제동', '전산동', '네트워크동', '백업센터'
+];
+
+// 방 이름 템플릿
+const ROOM_TEMPLATES = [
+    '서버실', '전산실', 'IDC룸', '네트워크실',
+    'UPS실', '항온항습실', '전력실', '통합관제실',
+    '스토리지실', '백업실', '보안관제실', '운영실'
+];
+
 /**
- * 통합 자산 계층 생성
+ * 대규모 자산 계층 생성 (5,000+ assets)
  *
- * 다양한 케이스를 다룸:
- * 1. Building > Floor > Room (공간 계층)
- * 2. Room > Rack > Server (장비 계층)
- * 3. Room > PDU (개별 존재)
- * 4. Rack > PDU (포함 관계)
- * 5. 독립 자산 (센서, CRAC 등)
+ * 구조:
+ * Building (25) > Floor (5) > Room (4) > Rack (3) > Server (8)
+ *                                     > PDU, UPS, CRAC, Sensor
  *
- * 모든 항목은 동일한 Asset 구조:
- * - id, name, type, parentId
- * - canHaveChildren: boolean (Tree 표시 여부)
- * - hasChildren: boolean (Lazy Loading용)
- * - children: [] (하위 자산)
+ * 예상 자산 수:
+ * - 건물: 25
+ * - 층: 25 * 5 = 125
+ * - 방: 125 * 4 = 500
+ * - 랙: 500 * 3 = 1,500
+ * - 서버: 1,500 * 8 = 12,000
+ * - PDU: 500 * 2 = 1,000
+ * - UPS: 500 * 1 = 500
+ * - CRAC: 500 * 2 = 1,000
+ * - 센서: 500 * 4 = 2,000
+ * 총: 약 18,650+ 자산
  */
 function generateHierarchy() {
     ALL_ASSETS = [];
 
-    const items = [
-        // ========================================
-        // 케이스 1: 본관 - 전통적인 공간 계층
-        // Building > Floor > Room > Rack > Server
-        // ========================================
-        createAsset('building-001', '본관', 'building', null, true, [
-            createAsset('floor-001-01', '1층', 'floor', 'building-001', true, [
-                createAsset('room-001-01-01', '서버실 A', 'room', 'floor-001-01', true, [
-                    // Rack은 컨테이너 (Server를 포함)
-                    createAsset('rack-001', 'Rack A-01', 'rack', 'room-001-01-01', true, [
-                        createAsset('server-001', 'Server 001', 'server', 'rack-001', false),
-                        createAsset('server-002', 'Server 002', 'server', 'rack-001', false),
-                        createAsset('server-003', 'Server 003', 'server', 'rack-001', false),
-                    ]),
-                    createAsset('rack-002', 'Rack A-02', 'rack', 'room-001-01-01', true, [
-                        createAsset('server-004', 'Server 004', 'server', 'rack-002', false),
-                        createAsset('server-005', 'Server 005', 'server', 'rack-002', false),
-                        // PDU가 Rack 안에 포함된 케이스
-                        createAsset('pdu-001', 'PDU 001 (In-Rack)', 'pdu', 'rack-002', false),
-                    ]),
-                    // PDU가 Room에 직접 존재하는 케이스 (Rack 밖)
-                    createAsset('pdu-002', 'PDU 002 (Standalone)', 'pdu', 'room-001-01-01', false),
-                    // CRAC, Sensor는 말단 자산
-                    createAsset('crac-001', 'CRAC 001', 'crac', 'room-001-01-01', false),
-                    createAsset('sensor-001', 'Sensor 001', 'sensor', 'room-001-01-01', false),
-                ]),
-                createAsset('room-001-01-02', '네트워크실', 'room', 'floor-001-01', true, [
-                    // 네트워크 장비 전용 Rack
-                    createAsset('rack-003', 'Network Rack 01', 'rack', 'room-001-01-02', true, [
-                        createAsset('switch-001', 'Switch 001', 'switch', 'rack-003', false),
-                        createAsset('switch-002', 'Switch 002', 'switch', 'rack-003', false),
-                        createAsset('router-001', 'Router 001', 'router', 'rack-003', false),
-                    ]),
-                    createAsset('ups-001', 'UPS 001', 'ups', 'room-001-01-02', false),
-                    createAsset('sensor-002', 'Sensor 002', 'sensor', 'room-001-01-02', false),
-                ]),
-            ]),
-            createAsset('floor-001-02', '2층', 'floor', 'building-001', true, [
-                createAsset('room-001-02-01', 'UPS실', 'room', 'floor-001-02', true, [
-                    // UPS는 말단 자산 (다른 것을 포함하지 않음)
-                    createAsset('ups-002', 'UPS 002', 'ups', 'room-001-02-01', false),
-                    createAsset('ups-003', 'UPS 003', 'ups', 'room-001-02-01', false),
-                    createAsset('ups-004', 'UPS 004', 'ups', 'room-001-02-01', false),
-                    createAsset('sensor-003', 'Sensor 003', 'sensor', 'room-001-02-01', false),
-                ]),
-            ]),
-        ]),
+    const items = [];
+    let serverIdx = 1, pduIdx = 1, upsIdx = 1, cracIdx = 1, sensorIdx = 1, rackIdx = 1;
 
-        // ========================================
-        // 케이스 2: 별관 A - PDU가 컨테이너 역할
-        // Room > PDU > Circuit (PDU가 회로를 포함)
-        // ========================================
-        createAsset('building-002', '별관 A', 'building', null, true, [
-            createAsset('floor-002-01', '1층', 'floor', 'building-002', true, [
-                createAsset('room-002-01-01', '전산실', 'room', 'floor-002-01', true, [
-                    // PDU가 컨테이너 역할 (회로/분기를 포함)
-                    createAsset('pdu-003', 'PDU 003 (Main)', 'pdu', 'room-002-01-01', true, [
-                        createAsset('circuit-001', 'Circuit A1', 'circuit', 'pdu-003', false),
-                        createAsset('circuit-002', 'Circuit A2', 'circuit', 'pdu-003', false),
-                        createAsset('circuit-003', 'Circuit B1', 'circuit', 'pdu-003', false),
-                    ]),
-                    // 일반 PDU (말단)
-                    createAsset('pdu-004', 'PDU 004', 'pdu', 'room-002-01-01', false),
-                    createAsset('crac-002', 'CRAC 002', 'crac', 'room-002-01-01', false),
-                ]),
-                createAsset('room-002-01-02', '항온항습실', 'room', 'floor-002-01', true, [
-                    createAsset('crac-003', 'CRAC 003', 'crac', 'room-002-01-02', false),
-                    createAsset('crac-004', 'CRAC 004', 'crac', 'room-002-01-02', false),
-                    createAsset('sensor-004', 'Sensor 004', 'sensor', 'room-002-01-02', false),
-                    createAsset('sensor-005', 'Sensor 005', 'sensor', 'room-002-01-02', false),
-                ]),
-            ]),
-        ]),
+    for (let b = 1; b <= DATA_CONFIG.buildings; b++) {
+        const buildingId = `building-${String(b).padStart(3, '0')}`;
+        const buildingName = BUILDING_NAMES[b - 1] || `Building ${b}`;
 
-        // ========================================
-        // 케이스 3: 별관 B - 혼합 구조
-        // 깊은 계층 + 평면 구조 공존
-        // ========================================
-        createAsset('building-003', '별관 B', 'building', null, true, [
-            createAsset('floor-003-01', '1층', 'floor', 'building-003', true, [
-                createAsset('room-003-01-01', '통합관제실', 'room', 'floor-003-01', true, [
-                    // 캐비넷(컨테이너) 안에 여러 장비
-                    createAsset('cabinet-001', 'Cabinet 001', 'cabinet', 'room-003-01-01', true, [
-                        createAsset('server-006', 'Server 006', 'server', 'cabinet-001', false),
-                        createAsset('storage-001', 'Storage 001', 'storage', 'cabinet-001', false),
-                        createAsset('pdu-005', 'PDU 005', 'pdu', 'cabinet-001', false),
-                    ]),
-                    // 독립 센서들
-                    createAsset('sensor-006', 'Temp Sensor', 'sensor', 'room-003-01-01', false),
-                    createAsset('sensor-007', 'Humidity Sensor', 'sensor', 'room-003-01-01', false),
-                    createAsset('sensor-008', 'Power Meter', 'sensor', 'room-003-01-01', false),
-                ]),
-            ]),
-            createAsset('floor-003-02', '2층', 'floor', 'building-003', true, [
-                // 빈 층 (하위 자산 없음, 하지만 canHaveChildren=true)
-                // hasChildren=false로 설정됨
-            ]),
-        ]),
+        const floors = [];
 
-        // ========================================
-        // 케이스 4: 독립 공간 - 건물 없이 바로 방
-        // Root Level에 Room이 직접 존재
-        // ========================================
+        for (let f = 1; f <= DATA_CONFIG.floorsPerBuilding; f++) {
+            const floorId = `floor-${String(b).padStart(3, '0')}-${String(f).padStart(2, '0')}`;
+            const floorName = `${f}층`;
+
+            const rooms = [];
+
+            for (let r = 1; r <= DATA_CONFIG.roomsPerFloor; r++) {
+                const roomId = `room-${String(b).padStart(3, '0')}-${String(f).padStart(2, '0')}-${String(r).padStart(2, '0')}`;
+                const roomTemplate = ROOM_TEMPLATES[(f * DATA_CONFIG.roomsPerFloor + r) % ROOM_TEMPLATES.length];
+                const roomName = `${roomTemplate} ${String.fromCharCode(64 + r)}`;
+
+                const roomChildren = [];
+
+                // Racks with Servers
+                for (let rk = 1; rk <= DATA_CONFIG.racksPerRoom; rk++) {
+                    const rackId = `rack-${String(rackIdx++).padStart(4, '0')}`;
+                    const rackName = `Rack ${String.fromCharCode(64 + rk)}-${String(rk).padStart(2, '0')}`;
+
+                    const servers = [];
+                    for (let s = 1; s <= DATA_CONFIG.serversPerRack; s++) {
+                        const serverId = `server-${String(serverIdx++).padStart(5, '0')}`;
+                        servers.push(createAsset(serverId, `Server ${serverId.split('-')[1]}`, 'server', rackId, false));
+                    }
+
+                    // PDU in rack (일부 랙에만)
+                    if (rk === 1) {
+                        const pduId = `pdu-${String(pduIdx++).padStart(4, '0')}`;
+                        servers.push(createAsset(pduId, `PDU ${pduId.split('-')[1]} (In-Rack)`, 'pdu', rackId, false));
+                    }
+
+                    roomChildren.push(createAsset(rackId, rackName, 'rack', roomId, true, servers));
+                }
+
+                // Standalone PDUs
+                for (let p = 1; p <= DATA_CONFIG.pdusPerRoom - 1; p++) {
+                    const pduId = `pdu-${String(pduIdx++).padStart(4, '0')}`;
+                    roomChildren.push(createAsset(pduId, `PDU ${pduId.split('-')[1]}`, 'pdu', roomId, false));
+                }
+
+                // UPS
+                for (let u = 1; u <= DATA_CONFIG.upsPerRoom; u++) {
+                    const upsId = `ups-${String(upsIdx++).padStart(4, '0')}`;
+                    roomChildren.push(createAsset(upsId, `UPS ${upsId.split('-')[1]}`, 'ups', roomId, false));
+                }
+
+                // CRAC
+                for (let c = 1; c <= DATA_CONFIG.cracsPerRoom; c++) {
+                    const cracId = `crac-${String(cracIdx++).padStart(4, '0')}`;
+                    roomChildren.push(createAsset(cracId, `CRAC ${cracId.split('-')[1]}`, 'crac', roomId, false));
+                }
+
+                // Sensors
+                const sensorTypes = ['Temp', 'Humidity', 'Power', 'Air Flow'];
+                for (let se = 1; se <= DATA_CONFIG.sensorsPerRoom; se++) {
+                    const sensorId = `sensor-${String(sensorIdx++).padStart(5, '0')}`;
+                    const sensorType = sensorTypes[(se - 1) % sensorTypes.length];
+                    roomChildren.push(createAsset(sensorId, `${sensorType} Sensor ${sensorId.split('-')[1]}`, 'sensor', roomId, false));
+                }
+
+                rooms.push(createAsset(roomId, roomName, 'room', floorId, true, roomChildren));
+            }
+
+            floors.push(createAsset(floorId, floorName, 'floor', buildingId, true, rooms));
+        }
+
+        items.push(createAsset(buildingId, buildingName, 'building', null, true, floors));
+    }
+
+    // 독립 공간 추가 (기존 케이스 유지)
+    items.push(
         createAsset('room-independent-01', '외부 창고', 'room', null, true, [
-            createAsset('storage-002', 'Storage 002', 'storage', 'room-independent-01', false),
-            createAsset('sensor-009', 'Temp Sensor', 'sensor', 'room-independent-01', false),
+            createAsset('storage-001', 'Storage 001', 'storage', 'room-independent-01', false),
+            createAsset(`sensor-${String(sensorIdx++).padStart(5, '0')}`, 'Temp Sensor', 'sensor', 'room-independent-01', false),
         ]),
         createAsset('room-independent-02', '야외 발전기실', 'room', null, true, [
-            createAsset('ups-005', 'UPS 005 (Outdoor)', 'ups', 'room-independent-02', false),
-            createAsset('pdu-006', 'PDU 006 (Outdoor)', 'pdu', 'room-independent-02', false),
-            createAsset('sensor-010', 'Power Meter', 'sensor', 'room-independent-02', false),
-        ]),
-    ];
+            createAsset(`ups-${String(upsIdx++).padStart(4, '0')}`, 'Outdoor UPS', 'ups', 'room-independent-02', false),
+            createAsset(`pdu-${String(pduIdx++).padStart(4, '0')}`, 'Outdoor PDU', 'pdu', 'room-independent-02', false),
+            createAsset(`sensor-${String(sensorIdx++).padStart(5, '0')}`, 'Power Meter', 'sensor', 'room-independent-02', false),
+        ])
+    );
 
     return items;
 }
