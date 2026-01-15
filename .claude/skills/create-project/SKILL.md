@@ -1,11 +1,11 @@
 ---
-name: create-dashboard
+name: create-project
 description: RNBT 아키텍처 패턴에 맞는 완전한 대시보드 페이지를 생성합니다. Master/Page 레이어, 여러 컴포넌트, Mock 서버, datasetList.json을 포함한 전체 구조를 생성합니다. Use when creating dashboard pages, implementing Master/Page architecture, or setting up complete page structures with multiple components.
 ---
 
-# RNBT 대시보드 생성
+# RNBT 프로젝트 생성
 
-RNBT 아키텍처 패턴에 맞는 **완전한 대시보드 페이지**를 생성하는 Skill입니다.
+RNBT 아키텍처 패턴에 맞는 **완전한 프로젝트 구조**를 생성하는 Skill입니다.
 Master/Page 레이어, 컴포넌트들, Mock 서버, datasetList.json을 포함합니다.
 
 ---
