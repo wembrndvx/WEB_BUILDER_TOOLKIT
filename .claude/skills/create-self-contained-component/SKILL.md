@@ -1,11 +1,11 @@
 ---
-name: create-3d-self-contained-component
+name: create-self-contained-component
 description: 3D 환경에서 사용하는 자기완결 컴포넌트를 생성합니다. 페이지에 의존하지 않고 스스로 데이터를 fetch하며, Shadow DOM 팝업을 사용합니다. Use when creating 3D asset components, self-contained components with datasetInfo, or components with Shadow DOM popups.
 ---
 
-# 3D 자기완결 컴포넌트 생성
+# 자기완결 컴포넌트 생성
 
-3D 환경에서 사용하는 **자기완결 컴포넌트**를 생성하는 Skill입니다.
+**자기완결 컴포넌트**를 생성하는 Skill입니다.
 페이지 오케스트레이션 없이 컴포넌트가 직접 데이터를 fetch합니다.
 Figma MCP는 필요하지 않습니다.
 
@@ -18,7 +18,7 @@ Figma MCP는 필요하지 않습니다.
 | **데이터 소스** | 페이지에서 발행 (GlobalDataPublisher) | 컴포넌트가 직접 fetch (Wkit.fetchData) |
 | **구독 방식** | `this.subscriptions` | `this.datasetInfo` |
 | **렌더링 트리거** | 토픽 발행 시 자동 호출 | Public Method 호출 시 fetch → render |
-| **사용 환경** | 2D 대시보드 | 3D 씬 (클릭 이벤트 기반) |
+| **사용 환경** | 대시보드 (페이지가 데이터 관리) | 독립 위젯, 3D 씬 등 (컴포넌트가 자율적) |
 | **팝업 방식** | 일반 DOM | Shadow DOM (스타일 격리) |
 
 ---
@@ -27,8 +27,8 @@ Figma MCP는 필요하지 않습니다.
 
 ```
 RNBT_architecture/Projects/[프로젝트명]/page/components/[ComponentName]/
-├── views/component.html       # 3D 오브젝트 마크업 (최소한)
-├── styles/component.css       # 3D 오브젝트 스타일 (최소한)
+├── views/component.html       # 컴포넌트 마크업 (최소한)
+├── styles/component.css       # 컴포넌트 스타일 (최소한)
 ├── scripts/
 │   ├── register.js            # datasetInfo + 팝업 + Public Methods
 │   └── beforeDestroy.js       # destroyPopup 호출
@@ -51,7 +51,7 @@ this.globalDataMappings = [
     { topic: 'upsData', datasetName: 'ups', param: { id: 1 } }
 ];
 
-// 자기완결 방식 (3D 컴포넌트)
+// 자기완결 방식
 // component/scripts/register.js
 this.datasetInfo = [
     { datasetName: 'ups', param: { id: assetId }, render: ['renderUPSInfo'] },
@@ -88,14 +88,14 @@ applyShadowPopupMixin(this, {
 
 ### 4. 이벤트 처리 방식 결정 원칙
 
-3D 컴포넌트의 이벤트도 **내부 동작**과 **외부 알림**으로 구분됩니다.
+자기완결 컴포넌트의 이벤트도 **내부 동작**과 **외부 알림**으로 구분됩니다.
 
 **질문: "이 동작의 결과를 페이지가 알아야 하는가?"**
 
 | 답변 | 처리 방식 | 예시 |
 |------|----------|------|
 | **아니오** (컴포넌트 내부 완결) | 팝업 내 직접 바인딩 | 닫기 버튼, 탭 전환, 차트 확대 |
-| **예** (페이지가 후속 처리) | `customEvents` (bind3DEvents) | 3D 오브젝트 클릭 → 상세 패널 |
+| **예** (페이지가 후속 처리) | `customEvents` (bindCustomEvents) | 오브젝트 클릭 → 상세 패널 |
 | **둘 다** | 둘 다 | 오브젝트 클릭 → 하이라이트(내부) + 정보 요청(외부) |
 
 ```javascript
@@ -119,15 +119,15 @@ this.popupCreatedConfig = {
 **중요:**
 - 페이지가 이벤트를 구독하지 않아도 컴포넌트는 독립적으로 동작해야 합니다.
 
-**2D vs 3D 팝업 이벤트 정리 차이:**
+**일반 컴포넌트 vs Shadow DOM 팝업 이벤트 정리 차이:**
 
-| 구분 | 2D 컴포넌트 | 3D 팝업 (Shadow DOM) |
+| 구분 | 일반 컴포넌트 | Shadow DOM 팝업 |
 |------|------------|---------------------|
 | **이벤트 바인딩** | `addEventListener` 직접 사용 | `bindPopupEvents` (PopupMixin) |
 | **정리 방식** | `removeEventListener` 개별 호출 | `destroyPopup()` 일괄 정리 |
 | **익명 함수** | ❌ 제거 불가 (`_internalHandlers` 필요) | ✅ 사용 가능 (Mixin이 정리) |
 
-3D 팝업에서 익명 함수가 허용되는 이유:
+Shadow DOM 팝업에서 익명 함수가 허용되는 이유:
 - `bindPopupEvents`가 이벤트를 내부적으로 추적
 - `destroyPopup()` 호출 시 Shadow DOM과 함께 모든 이벤트 일괄 제거
 - 따라서 `_internalHandlers` 패턴 불필요
@@ -152,9 +152,9 @@ publishCode에서 template 태그로 팝업 HTML 제공:
 
 ```javascript
 /**
- * [ComponentName] - Self-Contained 3D Component
+ * [ComponentName] - Self-Contained Component
  *
- * applyShadowPopupMixin을 사용한 자기 완결 컴포넌트
+ * applyShadowPopupMixin을 사용한 자기완결 컴포넌트
  *
  * 핵심 구조:
  * 1. datasetInfo - 데이터 정의
@@ -554,7 +554,7 @@ this.templateConfig = {
 **[CODING_STYLE.md](../CODING_STYLE.md)의 CSS 원칙 섹션 참조**
 
 핵심 요약:
-- **px 단위 사용** (rem/em 금지) - 3D 환경에서 팝업 크기 예측 가능성 보장
+- **px 단위 사용** (rem/em 금지) - 팝업 크기 예측 가능성 보장
 - **Flexbox 우선** (Grid/absolute 지양)
 
 **absolute 허용 케이스** (팝업 전용):
@@ -599,7 +599,7 @@ this.templateConfig = {
 - [ ] Public Methods 정의 완료
     - [ ] showDetail (팝업 표시 + 데이터 fetch)
     - [ ] hideDetail (팝업 숨김)
-- [ ] customEvents 정의 (3D 이벤트)
+- [ ] customEvents 정의 (외부 이벤트)
 - [ ] templateConfig 정의 (팝업 template ID)
 - [ ] popupCreatedConfig 정의
     - [ ] chartSelector
@@ -623,12 +623,12 @@ this.templateConfig = {
 
 ## README.md 템플릿 (필수)
 
-3D 자기완결 컴포넌트의 동작과 사용법을 문서화합니다.
+자기완결 컴포넌트의 동작과 사용법을 문서화합니다.
 
 ```markdown
 # [ComponentName]
 
-[컴포넌트 한 줄 설명] - 3D 자기완결 컴포넌트
+[컴포넌트 한 줄 설명] - 자기완결 컴포넌트
 
 ## 데이터 구조
 
@@ -658,12 +658,12 @@ this.templateConfig = {
 
 | 이벤트 | 발생 시점 | payload |
 |--------|----------|---------|
-| `@TBD_3dObjectClicked` | 3D 오브젝트 클릭 | `{ event, targetInstance }` |
+| `@TBD_objectClicked` | 오브젝트 클릭 | `{ event, targetInstance }` |
 
 ## 내부 동작
 
 ### 팝업 표시 흐름
-1. 3D 오브젝트 클릭 → `@3dObjectClicked` 이벤트 발행
+1. 오브젝트 클릭 → `@objectClicked` 이벤트 발행
 2. 페이지 핸들러가 `showDetail(assetId)` 호출
 3. 컴포넌트가 `Wkit.fetchData`로 데이터 fetch
 4. Shadow DOM 팝업 생성 및 렌더링
@@ -676,7 +676,7 @@ this.templateConfig = {
 
 \`\`\`
 [ComponentName]/
-├── views/component.html      # 3D 오브젝트 마크업
+├── views/component.html      # 컴포넌트 마크업
 ├── styles/component.css
 ├── scripts/
 │   ├── register.js           # datasetInfo + Mixin
