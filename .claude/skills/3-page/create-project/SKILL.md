@@ -1004,7 +1004,7 @@ open preview.html
 | 문서 | 내용 |
 |------|------|
 | [CODING_STYLE.md](../../../guides/CODING_STYLE.md) | 함수형 코딩 지침 (필수 참고) |
-| [create-component/SKILL.md](./create-component/SKILL.md) | 컴포넌트 생성 지침 (컴포넌트 작성 시 참고) |
+| [create-component/SKILL.md](../../2-component/create-component/SKILL.md) | 컴포넌트 생성 지침 (컴포넌트 작성 시 참고) |
 
 ---
 
