@@ -10,6 +10,10 @@
 - [프로젝트 설계 템플릿](#프로젝트-설계-템플릿)
 - [컴포넌트 라이프사이클 패턴](#컴포넌트-라이프사이클-패턴)
 - [고급 패턴](#고급-패턴)
+  - [Param 관리](#param-관리)
+  - [Interval 관리](#interval-관리)
+  - [동적 Param 변경 패턴](#동적-param-변경-패턴)
+  - [YAGNI 원칙](#yagni-원칙)
 - [완전한 라이프사이클 흐름](#완전한-라이프사이클-흐름)
 - [핵심 원칙](#핵심-원칙)
 - [Default JS 템플릿](#default-js-템플릿)
@@ -226,13 +230,12 @@ this.globalDataMappings = [
 - `refreshInterval` 있으면: 주기적 갱신
 - `refreshInterval` 없으면: 한 번만 fetch
 
-**Param 관리:**
+**Param 관리 / Interval 관리:**
 
-문제: param은 호출 시점마다 달라질 수 있어야 함 (필터, 시간 범위 등)
-해결: `this.currentParams`로 topic별 param 관리
+> 상세 내용은 [고급 패턴](#고급-패턴) 섹션 참조
 
 ```javascript
-// Initialize param storage
+// 초기화 흐름
 this.currentParams = {};
 
 fx.go(
@@ -241,45 +244,9 @@ fx.go(
     each(({ topic }) => this.currentParams[topic] = {}), // 2. Init params
     each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this)) // 3. Fetch
 );
-```
-
-- 관리 주체: 페이지 (데이터셋 정보를 소유하므로)
-- 관리 구조: `this.currentParams[topic]`
-- 사용: `fetchAndPublish(topic, this, this.currentParams[topic])`
-
-**Interval 관리:**
-
-```javascript
-this.startAllIntervals = () => {
-    this.refreshIntervals = {};
-
-    fx.go(
-        this.globalDataMappings,
-        each(({ topic, refreshInterval }) => {
-            if (refreshInterval) {
-                this.refreshIntervals[topic] = setInterval(() => {
-                    GlobalDataPublisher.fetchAndPublish(
-                        topic,
-                        this,
-                        this.currentParams[topic] || {}
-                    );
-                }, refreshInterval);
-            }
-        })
-    );
-};
-
-this.stopAllIntervals = () => {
-    fx.go(
-        Object.values(this.refreshIntervals || {}),
-        each(interval => clearInterval(interval))
-    );
-};
 
 this.startAllIntervals();
 ```
-
-> 핵심: `currentParams`는 참조이므로 interval 재시작 불필요
 
 #### page_before_unload.js
 
@@ -404,6 +371,66 @@ this.updateCount = null;
 ---
 
 ## 고급 패턴
+
+### Param 관리
+
+**문제:** param은 호출 시점마다 달라질 수 있어야 함 (필터, 시간 범위 등)
+
+**해결:** `this.currentParams`로 topic별 param 관리
+
+```javascript
+// Initialize param storage
+this.currentParams = {};
+
+fx.go(
+    this.globalDataMappings,
+    each(GlobalDataPublisher.registerMapping),           // 1. Register
+    each(({ topic }) => this.currentParams[topic] = {}), // 2. Init params
+    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this)) // 3. Fetch
+);
+```
+
+| 항목 | 설명 |
+|------|------|
+| 관리 주체 | 페이지 (데이터셋 정보를 소유하므로) |
+| 관리 구조 | `this.currentParams[topic]` |
+| 사용 | `fetchAndPublish(topic, this, this.currentParams[topic])` |
+
+### Interval 관리
+
+**문제:** 데이터마다 갱신 주기가 다를 수 있음
+
+**해결:** topic별 독립적인 interval 관리
+
+```javascript
+this.startAllIntervals = () => {
+    this.refreshIntervals = {};
+
+    fx.go(
+        this.globalDataMappings,
+        each(({ topic, refreshInterval }) => {
+            if (refreshInterval) {
+                this.refreshIntervals[topic] = setInterval(() => {
+                    GlobalDataPublisher.fetchAndPublish(
+                        topic,
+                        this,
+                        this.currentParams[topic] || {}
+                    );
+                }, refreshInterval);
+            }
+        })
+    );
+};
+
+this.stopAllIntervals = () => {
+    fx.go(
+        Object.values(this.refreshIntervals || {}),
+        each(interval => clearInterval(interval))
+    );
+};
+
+this.startAllIntervals();
+```
 
 ### 동적 Param 변경 패턴
 
