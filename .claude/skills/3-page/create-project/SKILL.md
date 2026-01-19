@@ -252,7 +252,7 @@ this.globalDataMappings = [
 // 매핑 등록
 fx.go(
     this.globalDataMappings,
-    fx.each(mapping => registerMapping(this, mapping))
+    fx.each(registerMapping)
 );
 
 // ==================
