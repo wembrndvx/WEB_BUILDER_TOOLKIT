@@ -94,12 +94,13 @@ function initComponent() {
 
     // ======================
     // 4. Chart Config - ECharts 옵션 빌더
+    // - xKey, valuesKey: API 응답 구조에 맞게 수정 필요
     // - series 정보는 API response의 fields 배열에서 가져옴
     // - 색상, yAxisIndex 등 스타일 정보만 로컬에서 정의
     // ======================
     this.chartConfig = {
-        xKey: 'timestamps',
-        valuesKey: 'values',
+        xKey: 'timestamps',           // ← API 응답의 x축 데이터 키
+        valuesKey: 'values',          // ← API 응답의 시계열 데이터 객체 키
         styleMap: {
             power: { color: '#3b82f6', smooth: true, areaStyle: true, yAxisIndex: 0 },
             current: { color: '#f59e0b', smooth: true, yAxisIndex: 1 }
@@ -173,8 +174,7 @@ function initComponent() {
 // PUBLIC METHODS
 // ======================
 
-function showDetail(assetId) {
-    const targetId = assetId || this._defaultAssetId;
+function showDetail() {
     this.showPopup();
     this._switchTab('circuits');
 
@@ -182,9 +182,8 @@ function showDetail(assetId) {
         this.datasetInfo,
         fx.each(({ datasetName, render }) =>
             fx.go(
-                fetchData(this.page, datasetName, { assetId: targetId }),
-                result => result?.response?.data,
-                data => data && render.forEach(fn => this[fn](data))
+                fetchData(this.page, datasetName, { assetId: this._defaultAssetId }),
+                response => response && fx.each(fn => this[fn](response), render)
             )
         )
     ).catch(e => {
@@ -235,7 +234,10 @@ function onPopupCreated(popupConfig, tableConfig) {
 // RENDER FUNCTIONS
 // ======================
 
-function renderPDUInfo(data) {
+function renderPDUInfo({ response }) {
+    const { data } = response;
+    if (!data) return;
+
     // 기본 정보 렌더링 (name, zone, status)
     fx.go(
         this.baseInfoConfig,
@@ -262,12 +264,16 @@ function renderPDUInfo(data) {
     }).join('');
 }
 
-function renderCircuitTable(config, data) {
+function renderCircuitTable(config, { response }) {
+    const { data } = response;
+    if (!data) return;
     const circuits = data.circuits || data;
     this.updateTable(config.selector, circuits);
 }
 
-function renderPowerChart(config, data) {
+function renderPowerChart(config, { response }) {
+    const { data } = response;
+    if (!data) return;
     const option = config.optionBuilder(config, data);
     this.updateChart('.chart-container', option);
 }

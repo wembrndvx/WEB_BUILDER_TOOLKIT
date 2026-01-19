@@ -213,24 +213,35 @@ function initComponent() {
     // ======================
     // 2. Data Config (API 필드 매핑)
     // ======================
-    this.infoConfig = [
+    this.baseInfoConfig = [
         { key: 'name', selector: '.item-name' },
-        { key: 'status', selector: '.item-status', dataAttr: 'status' },
-        { key: 'value', selector: '.item-value', suffix: '%' }
+        { key: 'statusLabel', selector: '.item-status' },
+        { key: 'status', selector: '.item-status', dataAttr: 'status' }
     ];
 
+    // 동적 필드 컨테이너 selector
+    this.fieldsContainerSelector = '.fields-container';
+
+    // chartConfig: API fields를 활용한 동적 렌더링
+    // - xKey, valuesKey: API 응답 구조에 맞게 수정 필요
+    // - series 정보는 API response의 fields 배열에서 가져옴
+    // - 색상, yAxisIndex 등 스타일 정보만 로컬에서 정의
     this.chartConfig = {
-        xKey: 'timestamps',
-        series: [
-            { yKey: 'value', name: 'Value', color: '#3b82f6', smooth: true }
-        ],
+        xKey: 'timestamps',           // ← API 응답의 x축 데이터 키
+        valuesKey: 'values',          // ← API 응답의 시계열 데이터 객체 키
+        // styleMap의 key는 API History 응답의 fields[].key와 일치해야 함
+        // 예: fields: [{ key: 'temperature', label: '온도', unit: '°C' }]
+        //     → styleMap: { temperature: { color: '#3b82f6', ... } }
+        styleMap: {
+            TBD_fieldKey: { color: '#3b82f6', yAxisIndex: 0 }
+        },
         optionBuilder: getLineChartOption
     };
 
     // ======================
     // 3. 렌더링 함수 바인딩
     // ======================
-    this.renderInfo = renderInfo.bind(this, this.infoConfig);
+    this.renderInfo = renderInfo.bind(this);
     this.renderChart = renderChart.bind(this, this.chartConfig);
 
     // ======================
@@ -294,8 +305,7 @@ function showDetail() {
         fx.each(({ datasetName, param, render }) =>
             fx.go(
                 fetchData(this.page, datasetName, param),
-                result => result?.response?.data,
-                data => data && render.forEach(fn => this[fn](data))
+                response => response && fx.each(fn => this[fn](response), render)
             )
         )
     ).catch(e => {
@@ -312,19 +322,34 @@ function hideDetail() {
 // RENDER FUNCTIONS
 // ======================
 
-function renderInfo(config, { response }) {
+function renderInfo({ response }) {
     const { data } = response;
     if (!data) return;
+
+    // 기본 정보 렌더링 (name, status 등 고정 필드)
     fx.go(
-        config,
-        fx.each(({ key, selector, dataAttr, suffix }) => {
+        this.baseInfoConfig,
+        fx.each(({ key, selector, dataAttr }) => {
             const el = this.popupQuery(selector);
-            if (!el) return;
-            const value = data[key];
-            el.textContent = suffix ? `${value}${suffix}` : value;
-            dataAttr && (el.dataset[dataAttr] = value);
+            if (el) {
+                el.textContent = data[key];
+                if (dataAttr) el.dataset[dataAttr] = data[key];
+            }
         })
     );
+
+    // 동적 필드 렌더링 (API fields 배열 사용)
+    const container = this.popupQuery(this.fieldsContainerSelector);
+    if (!container || !data.fields) return;
+
+    const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
+    container.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
+        const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
+        return `<div class="value-card">
+            <div class="value-label">${label}</div>
+            <div class="value-data">${displayValue ?? '-'}</div>
+        </div>`;
+    }).join('');
 }
 
 function renderChart(config, { response }) {
@@ -339,21 +364,57 @@ function renderChart(config, { response }) {
 // CHART OPTION BUILDER
 // ======================
 
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function getLineChartOption(config, data) {
-    const { xKey, series: seriesConfig } = config;
+    const { xKey, valuesKey, styleMap } = config;
+    const { fields } = data;
+    const values = data[valuesKey];
+
+    // API fields를 기반으로 series 생성
+    const seriesData = fields.map(field => {
+        const style = styleMap[field.key] || {};
+        return {
+            key: field.key,
+            name: field.label,
+            unit: field.unit,
+            ...style
+        };
+    });
+
+    // yAxis 설정: fields의 unit 정보 활용
+    const yAxisUnits = [...new Set(seriesData.map(s => s.unit))];
+    const yAxes = yAxisUnits.map((unit, idx) => ({
+        type: 'value',
+        name: unit,
+        position: idx === 0 ? 'left' : 'right',
+        axisLine: { show: true, lineStyle: { color: '#333' } },
+        axisLabel: { color: '#888', fontSize: 10 },
+        splitLine: { lineStyle: { color: idx === 0 ? '#333' : 'transparent' } }
+    }));
 
     return {
-        grid: { left: 45, right: 16, top: 30, bottom: 24 },
-        legend: {
-            data: seriesConfig.map(s => s.name),
-            top: 0,
-            textStyle: { color: '#8892a0', fontSize: 11 }
-        },
         tooltip: {
             trigger: 'axis',
-            backgroundColor: '#1a1f2e',
+            backgroundColor: 'rgba(26, 31, 46, 0.95)',
             borderColor: '#2a3142',
             textStyle: { color: '#e0e6ed', fontSize: 12 }
+        },
+        legend: {
+            data: seriesData.map(s => s.name),
+            top: 8,
+            textStyle: { color: '#8892a0', fontSize: 11 }
+        },
+        grid: {
+            left: 50,
+            right: 50,
+            top: 40,
+            bottom: 24
         },
         xAxis: {
             type: 'category',
@@ -361,19 +422,25 @@ function getLineChartOption(config, data) {
             axisLine: { lineStyle: { color: '#333' } },
             axisLabel: { color: '#888', fontSize: 10 }
         },
-        yAxis: {
-            type: 'value',
-            axisLine: { show: false },
-            axisLabel: { color: '#888', fontSize: 10 },
-            splitLine: { lineStyle: { color: '#333' } }
-        },
-        series: seriesConfig.map(({ yKey, name, color, smooth }) => ({
+        yAxis: yAxes,
+        series: seriesData.map(({ key, name, color, yAxisIndex = 0 }) => ({
             name,
             type: 'line',
-            data: data[yKey],
-            smooth,
+            yAxisIndex,
+            data: values[key],
+            smooth: true,
             symbol: 'none',
-            lineStyle: { color, width: 2 }
+            lineStyle: { color, width: 2 },
+            areaStyle: {
+                color: {
+                    type: 'linear',
+                    x: 0, y: 0, x2: 0, y2: 1,
+                    colorStops: [
+                        { offset: 0, color: hexToRgba(color, 0.2) },
+                        { offset: 1, color: hexToRgba(color, 0) }
+                    ]
+                }
+            }
         }))
     };
 }
@@ -494,9 +561,12 @@ this.datasetInfo = [
 ];
 
 // Config
-this.infoConfig = [
-    { key: 'TBD_fieldName', selector: '.TBD-selector' }
+this.baseInfoConfig = [
+    { key: 'name', selector: '.TBD-name' },
+    { key: 'statusLabel', selector: '.TBD-status' },
+    { key: 'status', selector: '.TBD-status', dataAttr: 'status' }
 ];
+this.fieldsContainerSelector = '.fields-container';
 
 // customEvents
 this.customEvents = {
@@ -612,7 +682,8 @@ this.templateConfig = {
     - [ ] param 정의 (assetId 등)
     - [ ] render 함수 목록
 - [ ] Data Config 정의 완료
-    - [ ] infoConfig (필드 매핑)
+    - [ ] baseInfoConfig (고정 필드 매핑)
+    - [ ] fieldsContainerSelector (동적 필드 컨테이너)
     - [ ] chartConfig (차트 설정)
 - [ ] Public Methods 정의 완료
     - [ ] showDetail (팝업 표시 + 데이터 fetch)

@@ -76,69 +76,8 @@
                         </div>
 
                         <div class="popup-body">
-                            <div class="values-section">
-                                <div class="section-title">Temperature</div>
-                                <div class="temp-values">
-                                    <div class="value-card supply">
-                                        <div class="value-icon">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                                <path d="M12 19V5M12 5L6 11M12 5L18 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                            </svg>
-                                        </div>
-                                        <div class="value-info">
-                                            <div class="value-label">Supply</div>
-                                            <div class="value-number">
-                                                <span class="crac-supply-temp">-</span>
-                                                <span class="value-unit">°C</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="value-card return">
-                                        <div class="value-icon">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                                <path d="M12 5V19M12 19L6 13M12 19L18 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                            </svg>
-                                        </div>
-                                        <div class="value-info">
-                                            <div class="value-label">Return</div>
-                                            <div class="value-number">
-                                                <span class="crac-return-temp">-</span>
-                                                <span class="value-unit">°C</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="status-values">
-                                <div class="status-card">
-                                    <div class="status-label">Humidity</div>
-                                    <div class="status-number">
-                                        <span class="crac-humidity">-</span>
-                                        <span class="status-unit">%</span>
-                                    </div>
-                                </div>
-                                <div class="status-card">
-                                    <div class="status-label">Fan Speed</div>
-                                    <div class="status-number">
-                                        <span class="crac-fan-speed">-</span>
-                                        <span class="status-unit">%</span>
-                                    </div>
-                                </div>
-                                <div class="status-card">
-                                    <div class="status-label">Setpoint</div>
-                                    <div class="status-number">
-                                        <span class="crac-setpoint">-</span>
-                                        <span class="status-unit">°C</span>
-                                    </div>
-                                </div>
-                                <div class="status-card">
-                                    <div class="status-label">Mode</div>
-                                    <div class="status-number mode">
-                                        <span class="crac-mode">-</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Dynamic Fields Container -->
+                            <div class="fields-container"></div>
 
                             <div class="chart-section">
                                 <div class="chart-header">
@@ -196,36 +135,30 @@
 
             .popup-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
 
-            .values-section { display: flex; flex-direction: column; gap: 12px; }
-            .section-title { font-size: 12px; font-weight: 500; color: #8892a0; text-transform: uppercase; letter-spacing: 0.5px; }
-            .temp-values { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+            .fields-container {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+            }
 
             .value-card {
-                background: #252b3b; border-radius: 8px; padding: 16px;
-                display: flex; align-items: center; gap: 12px;
-            }
-            .value-card.supply .value-icon { color: #3b82f6; }
-            .value-card.return .value-icon { color: #ef4444; }
-
-            .value-icon {
-                display: flex; align-items: center; justify-content: center;
-                width: 40px; height: 40px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;
+                background: #252b3b;
+                border-radius: 8px;
+                padding: 12px;
             }
 
-            .value-info { display: flex; flex-direction: column; gap: 2px; }
-            .value-label { font-size: 11px; color: #8892a0; text-transform: uppercase; }
-            .value-number { display: flex; align-items: baseline; gap: 2px; }
-            .crac-supply-temp, .crac-return-temp { font-size: 24px; font-weight: 600; color: #e0e6ed; }
-            .value-unit { font-size: 14px; color: #8892a0; }
+            .value-label {
+                font-size: 11px;
+                color: #8892a0;
+                margin-bottom: 4px;
+                text-transform: uppercase;
+            }
 
-            .status-values { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-            .status-card { background: #252b3b; border-radius: 8px; padding: 12px; text-align: center; }
-            .status-label { font-size: 10px; color: #8892a0; margin-bottom: 6px; text-transform: uppercase; }
-            .status-number { display: flex; align-items: baseline; justify-content: center; gap: 2px; }
-            .crac-humidity, .crac-fan-speed, .crac-setpoint { font-size: 18px; font-weight: 600; color: #e0e6ed; }
-            .crac-mode { font-size: 12px; font-weight: 500; color: #3b82f6; text-transform: uppercase; }
-            .status-number.mode { justify-content: center; }
-            .status-unit { font-size: 11px; color: #8892a0; }
+            .value-data {
+                font-size: 20px;
+                font-weight: 600;
+                color: #e0e6ed;
+            }
 
             .chart-section { background: #252b3b; border-radius: 8px; overflow: hidden; }
             .chart-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #2a3142; }
@@ -250,20 +183,50 @@
             }
         };
 
-        // Mock data
+        // Mock data - API 응답 구조에 맞춤 (fields 배열 포함)
         const mockCRACData = {
-            normal: { name: 'CRAC-A01', zone: 'Zone-A', status: 'normal', supplyTemp: 18.2, returnTemp: 24.5, humidity: 48, fanSpeed: 75, setpoint: 18.0, mode: 'cooling' },
-            warning: { name: 'CRAC-B02', zone: 'Zone-B', status: 'warning', supplyTemp: 20.5, returnTemp: 28.8, humidity: 62, fanSpeed: 95, setpoint: 18.0, mode: 'cooling' },
-            critical: { name: 'CRAC-C03', zone: 'Zone-C', status: 'critical', supplyTemp: 22.0, returnTemp: 32.5, humidity: 72, fanSpeed: 100, setpoint: 18.0, mode: 'cooling' }
+            normal: {
+                name: 'CRAC-A01', zone: 'Zone-A', statusLabel: 'Normal', status: 'normal',
+                fields: [
+                    { key: 'supplyTemp', label: 'Supply Temp', value: 18.2, unit: '°C', order: 1 },
+                    { key: 'returnTemp', label: 'Return Temp', value: 24.5, unit: '°C', order: 2 },
+                    { key: 'humidity', label: 'Humidity', value: 48, unit: '%', order: 3 },
+                    { key: 'fanSpeed', label: 'Fan Speed', value: 75, unit: '%', order: 4 },
+                    { key: 'setpoint', label: 'Setpoint', value: 18.0, unit: '°C', order: 5 },
+                    { key: 'mode', label: 'Mode', valueLabel: 'Cooling', order: 6 }
+                ]
+            },
+            warning: {
+                name: 'CRAC-B02', zone: 'Zone-B', statusLabel: 'Warning', status: 'warning',
+                fields: [
+                    { key: 'supplyTemp', label: 'Supply Temp', value: 20.5, unit: '°C', order: 1 },
+                    { key: 'returnTemp', label: 'Return Temp', value: 28.8, unit: '°C', order: 2 },
+                    { key: 'humidity', label: 'Humidity', value: 62, unit: '%', order: 3 },
+                    { key: 'fanSpeed', label: 'Fan Speed', value: 95, unit: '%', order: 4 },
+                    { key: 'setpoint', label: 'Setpoint', value: 18.0, unit: '°C', order: 5 },
+                    { key: 'mode', label: 'Mode', valueLabel: 'Cooling', order: 6 }
+                ]
+            },
+            critical: {
+                name: 'CRAC-C03', zone: 'Zone-C', statusLabel: 'Critical', status: 'critical',
+                fields: [
+                    { key: 'supplyTemp', label: 'Supply Temp', value: 22.0, unit: '°C', order: 1 },
+                    { key: 'returnTemp', label: 'Return Temp', value: 32.5, unit: '°C', order: 2 },
+                    { key: 'humidity', label: 'Humidity', value: 72, unit: '%', order: 3 },
+                    { key: 'fanSpeed', label: 'Fan Speed', value: 100, unit: '%', order: 4 },
+                    { key: 'setpoint', label: 'Setpoint', value: 18.0, unit: '°C', order: 5 },
+                    { key: 'mode', label: 'Mode', valueLabel: 'Cooling', order: 6 }
+                ]
+            }
         };
 
         let currentStatus = 'normal';
 
         function generateHistoryData() {
             const timestamps = [];
-            const supplyTemps = [];
-            const returnTemps = [];
-            const humidities = [];
+            const supplyTemp = [];
+            const returnTemp = [];
+            const humidity = [];
             const now = new Date();
 
             for (let i = 23; i >= 0; i--) {
@@ -271,16 +234,25 @@
                 timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
 
                 const baseSupply = 18 + Math.sin(i / 8) * 1;
-                supplyTemps.push(Math.round((baseSupply + (Math.random() - 0.5) * 2) * 10) / 10);
+                supplyTemp.push(Math.round((baseSupply + (Math.random() - 0.5) * 2) * 10) / 10);
 
                 const baseReturn = 24 + Math.sin(i / 6) * 2;
-                returnTemps.push(Math.round((baseReturn + (Math.random() - 0.5) * 3) * 10) / 10);
+                returnTemp.push(Math.round((baseReturn + (Math.random() - 0.5) * 3) * 10) / 10);
 
                 const baseHumidity = 50 + Math.sin(i / 10) * 5;
-                humidities.push(Math.round(Math.max(35, Math.min(65, baseHumidity + (Math.random() - 0.5) * 8)) * 10) / 10);
+                humidity.push(Math.round(Math.max(35, Math.min(65, baseHumidity + (Math.random() - 0.5) * 8)) * 10) / 10);
             }
 
-            return { timestamps, supplyTemps, returnTemps, humidities };
+            // API fields 구조에 맞춤
+            return {
+                timestamps,
+                values: { supplyTemp, returnTemp, humidity },
+                fields: [
+                    { key: 'supplyTemp', label: 'Supply Temp', unit: '°C' },
+                    { key: 'returnTemp', label: 'Return Temp', unit: '°C' },
+                    { key: 'humidity', label: 'Humidity', unit: '%' }
+                ]
+            };
         }
 
         function getMockData(datasetName) {
@@ -425,97 +397,118 @@
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
-            const component = this;
-            const assetId = component.setter.ecoAssetInfo?.assetId || 'crac-001';
+            // register.js와 동일한 구조
+            this._defaultAssetId = this.setter?.ecoAssetInfo?.assetId || this.id;
 
-            component.datasetInfo = [
-                { datasetName: 'crac', param: { id: assetId }, render: ['renderCRACInfo'] },
-                { datasetName: 'cracHistory', param: { id: assetId }, render: ['renderChart'] }
+            this.datasetInfo = [
+                { datasetName: 'crac', render: ['renderCRACInfo'] },
+                { datasetName: 'cracHistory', render: ['renderChart'] }
             ];
 
-            component.baseInfoConfig = [
+            this.baseInfoConfig = [
                 { key: 'name', selector: '.crac-name' },
                 { key: 'zone', selector: '.crac-zone' },
+                { key: 'statusLabel', selector: '.crac-status' },
                 { key: 'status', selector: '.crac-status', dataAttr: 'status' }
             ];
 
-            component.cracInfoConfig = [
-                { key: 'supplyTemp', selector: '.crac-supply-temp' },
-                { key: 'returnTemp', selector: '.crac-return-temp' },
-                { key: 'humidity', selector: '.crac-humidity' },
-                { key: 'fanSpeed', selector: '.crac-fan-speed' },
-                { key: 'setpoint', selector: '.crac-setpoint' },
-                { key: 'mode', selector: '.crac-mode' }
-            ];
+            // 동적 필드 컨테이너 selector
+            this.fieldsContainerSelector = '.fields-container';
 
-            component.chartConfig = {
+            // chartConfig: API fields를 활용한 동적 렌더링
+            this.chartConfig = {
                 xKey: 'timestamps',
-                series: [
-                    { yKey: 'supplyTemps', name: 'Supply', color: '#3b82f6', yAxisIndex: 0 },
-                    { yKey: 'returnTemps', name: 'Return', color: '#ef4444', yAxisIndex: 0 },
-                    { yKey: 'humidities', name: 'Humidity', color: '#22c55e', yAxisIndex: 1 }
-                ],
-                yAxis: [
-                    { name: '°C', position: 'left' },
-                    { name: '%', position: 'right' }
-                ],
+                valuesKey: 'values',
+                styleMap: {
+                    supplyTemp: { color: '#3b82f6', yAxisIndex: 0 },
+                    returnTemp: { color: '#ef4444', yAxisIndex: 0 },
+                    humidity: { color: '#22c55e', yAxisIndex: 1 }
+                },
                 optionBuilder: getDualAxisChartOption
             };
 
-            component.renderCRACInfo = function(data) {
-                const config = [...component.baseInfoConfig, ...component.cracInfoConfig];
-                fx.go(config, fx.each(({ key, selector, dataAttr }) => {
-                    const el = component.popupQuery(selector);
+            this.renderCRACInfo = renderCRACInfo.bind(this);
+            this.renderChart = renderChart.bind(this);
+
+            this.showDetail = showDetail.bind(this);
+            this.hideDetail = hideDetail.bind(this);
+
+            this.customEvents = { click: '@assetClicked' };
+            bind3DEvents(this, this.customEvents);
+
+            this.templateConfig = { popup: 'popup-crac' };
+            this.popupCreatedConfig = {
+                chartSelector: '.chart-container',
+                events: { click: { '.close-btn': () => this.hideDetail() } }
+            };
+
+            const { htmlCode, cssCode } = this.properties.publishCode || {};
+            const ctx = this;
+            this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.templateConfig.popup);
+            this.getPopupStyles = () => cssCode || '';
+            this.onPopupCreated = function() {
+                const { chartSelector, events } = ctx.popupCreatedConfig;
+                if (chartSelector) ctx.createChart(chartSelector);
+                if (events) ctx.bindPopupEvents(events);
+            };
+
+            applyShadowPopupMixin(this, {
+                getHTML: this.getPopupHTML,
+                getStyles: this.getPopupStyles,
+                onCreated: this.onPopupCreated
+            });
+
+            applyEChartsMixin(this);
+
+            console.log('[CRAC] Registered:', this._defaultAssetId);
+        }
+
+        function renderCRACInfo({ response }) {
+            const { data } = response;
+            if (!data) return;
+
+            // 기본 정보 렌더링 (name, zone, status)
+            fx.go(
+                this.baseInfoConfig,
+                fx.each(({ key, selector, dataAttr }) => {
+                    const el = this.popupQuery(selector);
                     if (el) {
                         el.textContent = data[key];
                         if (dataAttr) el.dataset[dataAttr] = data[key];
                     }
-                }));
-            };
+                })
+            );
 
-            component.renderChart = function(data) {
-                const { optionBuilder, ...chartConfig } = component.chartConfig;
-                const option = optionBuilder(chartConfig, data);
-                component.updateChart('.chart-container', option);
-            };
+            // 동적 필드 렌더링 (API fields 배열 사용)
+            const container = this.popupQuery(this.fieldsContainerSelector);
+            if (!container || !data.fields) return;
 
-            component.showDetail = showDetail.bind(component);
-            component.hideDetail = hideDetail.bind(component);
+            const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
+            container.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
+                const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
+                return `<div class="value-card">
+                    <div class="value-label">${label}</div>
+                    <div class="value-data">${displayValue ?? '-'}</div>
+                </div>`;
+            }).join('');
+        }
 
-            component.customEvents = { click: '@cracClicked' };
-            bind3DEvents(component, component.customEvents);
-
-            component.templateConfig = { popup: 'popup-crac' };
-            component.popupCreatedConfig = {
-                chartSelector: '.chart-container',
-                events: { click: { '.close-btn': () => component.hideDetail() } }
-            };
-
-            const { htmlCode, cssCode } = component.properties.publishCode || {};
-            component.getPopupHTML = () => extractTemplate(htmlCode || '', component.templateConfig.popup);
-            component.getPopupStyles = () => cssCode || '';
-            component.onPopupCreated = onPopupCreated.bind(component, component.popupCreatedConfig);
-
-            applyShadowPopupMixin(component, {
-                getHTML: component.getPopupHTML,
-                getStyles: component.getPopupStyles,
-                onCreated: component.onPopupCreated
-            });
-
-            applyEChartsMixin(component);
-
-            console.log('[CRAC] Registered:', assetId);
+        function renderChart({ response }) {
+            const { data } = response;
+            if (!data) return;
+            const { optionBuilder, ...chartConfig } = this.chartConfig;
+            const option = optionBuilder(chartConfig, data);
+            this.updateChart('.chart-container', option);
         }
 
         function showDetail() {
             this.showPopup();
             fx.go(
                 this.datasetInfo,
-                fx.each(({ datasetName, param, render }) =>
+                fx.each(({ datasetName, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, param),
-                        result => result?.response?.data,
-                        data => data && render.forEach(fn => this[fn](data))
+                        Wkit.fetchData(this.page, datasetName, { assetId: this._defaultAssetId }),
+                        response => response && fx.each(fn => this[fn](response), render)
                     )
                 )
             ).catch(e => {
@@ -527,7 +520,31 @@
         function hideDetail() { this.hidePopup(); }
 
         function getDualAxisChartOption(config, data) {
-            const { xKey, series: seriesConfig, yAxis: yAxisConfig } = config;
+            const { xKey, valuesKey, styleMap } = config;
+            const { fields } = data;
+            const values = data[valuesKey];
+
+            // API fields를 기반으로 series 생성
+            const seriesData = fields.map(field => {
+                const style = styleMap[field.key] || {};
+                return {
+                    key: field.key,
+                    name: field.label,
+                    unit: field.unit,
+                    ...style
+                };
+            });
+
+            // yAxis 설정: fields의 unit 정보 활용
+            const yAxisUnits = [...new Set(seriesData.map(s => s.unit))];
+            const yAxes = yAxisUnits.map((unit, idx) => ({
+                type: 'value',
+                name: unit,
+                position: idx === 0 ? 'left' : 'right',
+                axisLine: { show: true, lineStyle: { color: '#333' } },
+                axisLabel: { color: '#888', fontSize: 10 },
+                splitLine: { lineStyle: { color: idx === 0 ? '#333' : 'transparent' } }
+            }));
 
             return {
                 tooltip: {
@@ -537,7 +554,7 @@
                     textStyle: { color: '#e0e6ed', fontSize: 12 }
                 },
                 legend: {
-                    data: seriesConfig.map(s => s.name),
+                    data: seriesData.map(s => s.name),
                     top: 8,
                     textStyle: { color: '#8892a0', fontSize: 11 }
                 },
@@ -548,21 +565,19 @@
                     axisLine: { lineStyle: { color: '#333' } },
                     axisLabel: { color: '#888', fontSize: 10 }
                 },
-                yAxis: yAxisConfig.map((axis, index) => ({
-                    type: 'value',
-                    name: axis.name,
-                    position: axis.position,
-                    axisLine: { show: true, lineStyle: { color: '#333' } },
-                    axisLabel: { color: '#888', fontSize: 10 },
-                    splitLine: { lineStyle: { color: index === 0 ? '#333' : 'transparent' } }
-                })),
-                series: seriesConfig.map(({ yKey, name, color, yAxisIndex }) => ({
-                    name, type: 'line', yAxisIndex,
-                    data: data[yKey], smooth: true, symbol: 'none',
+                yAxis: yAxes,
+                series: seriesData.map(({ key, name, color, yAxisIndex = 0 }) => ({
+                    name,
+                    type: 'line',
+                    yAxisIndex,
+                    data: values[key],
+                    smooth: true,
+                    symbol: 'none',
                     lineStyle: { color, width: 2 },
                     areaStyle: {
                         color: {
-                            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
                             colorStops: [
                                 { offset: 0, color: hexToRgba(color, 0.2) },
                                 { offset: 1, color: hexToRgba(color, 0) }

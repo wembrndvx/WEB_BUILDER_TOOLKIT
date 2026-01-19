@@ -77,28 +77,8 @@
                             </div>
                         </div>
 
-                        <div class="summary-bar">
-                            <div class="summary-item">
-                                <span class="summary-label">Power</span>
-                                <span class="summary-value pdu-power">-</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-label">Current</span>
-                                <span class="summary-value pdu-current">-</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-label">Voltage</span>
-                                <span class="summary-value pdu-voltage">-</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-label">Active</span>
-                                <span class="summary-value pdu-active-circuits">-</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-label">PF</span>
-                                <span class="summary-value pdu-pf">-</span>
-                            </div>
-                        </div>
+                        <!-- Dynamic Summary Bar -->
+                        <div class="summary-bar"></div>
 
                         <div class="tab-header">
                             <button class="tab-btn active" data-tab="circuits">Circuits</button>
@@ -228,11 +208,38 @@
             }
         };
 
-        // Mock data
+        // Mock data - API 응답 구조에 맞춤 (fields 배열 포함)
         const mockPDUData = {
-            normal: { name: 'PDU-A01', zone: 'Server Room A', status: 'normal', totalPower: 45.2, totalCurrent: 65.5, voltage: 220, activeCircuits: '18/24', powerFactor: 0.95 },
-            warning: { name: 'PDU-B02', zone: 'Server Room B', status: 'warning', totalPower: 72.8, totalCurrent: 105.2, voltage: 218, activeCircuits: '22/24', powerFactor: 0.92 },
-            critical: { name: 'PDU-C03', zone: 'Server Room C', status: 'critical', totalPower: 85.5, totalCurrent: 125.8, voltage: 215, activeCircuits: '24/24', powerFactor: 0.88 }
+            normal: {
+                name: 'PDU-A01', zone: 'Server Room A', statusLabel: 'Normal', status: 'normal',
+                fields: [
+                    { key: 'power', label: 'Power', value: 45.2, unit: 'kW', order: 1 },
+                    { key: 'current', label: 'Current', value: 65.5, unit: 'A', order: 2 },
+                    { key: 'voltage', label: 'Voltage', value: 220, unit: 'V', order: 3 },
+                    { key: 'activeCircuits', label: 'Active', valueLabel: '18/24', order: 4 },
+                    { key: 'pf', label: 'PF', value: 0.95, order: 5 }
+                ]
+            },
+            warning: {
+                name: 'PDU-B02', zone: 'Server Room B', statusLabel: 'Warning', status: 'warning',
+                fields: [
+                    { key: 'power', label: 'Power', value: 72.8, unit: 'kW', order: 1 },
+                    { key: 'current', label: 'Current', value: 105.2, unit: 'A', order: 2 },
+                    { key: 'voltage', label: 'Voltage', value: 218, unit: 'V', order: 3 },
+                    { key: 'activeCircuits', label: 'Active', valueLabel: '22/24', order: 4 },
+                    { key: 'pf', label: 'PF', value: 0.92, order: 5 }
+                ]
+            },
+            critical: {
+                name: 'PDU-C03', zone: 'Server Room C', statusLabel: 'Critical', status: 'critical',
+                fields: [
+                    { key: 'power', label: 'Power', value: 85.5, unit: 'kW', order: 1 },
+                    { key: 'current', label: 'Current', value: 125.8, unit: 'A', order: 2 },
+                    { key: 'voltage', label: 'Voltage', value: 215, unit: 'V', order: 3 },
+                    { key: 'activeCircuits', label: 'Active', valueLabel: '24/24', order: 4 },
+                    { key: 'pf', label: 'PF', value: 0.88, order: 5 }
+                ]
+            }
         };
 
         const mockCircuitData = [
@@ -260,7 +267,15 @@
                 current.push(Math.round((basePower * 1.45 + (Math.random() - 0.5) * 10) * 10) / 10);
             }
 
-            return { timestamps, power, current };
+            // API fields 구조에 맞춤
+            return {
+                timestamps,
+                values: { power, current },
+                fields: [
+                    { key: 'power', label: 'Power', unit: 'kW' },
+                    { key: 'current', label: 'Current', unit: 'A' }
+                ]
+            };
         }
 
         function getMockData(datasetName) {
@@ -427,30 +442,24 @@
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
 
-            const assetId = this.setter.ecoAssetInfo.assetId;
+            // register.js와 동일한 구조
+            this._defaultAssetId = this.setter?.ecoAssetInfo?.assetId || this.id;
 
             this.datasetInfo = [
-                { datasetName: 'pdu', param: { id: assetId }, render: ['renderPDUInfo'] },
-                { datasetName: 'pduCircuits', param: { id: assetId }, render: ['renderCircuitTable'] },
-                { datasetName: 'pduHistory', param: { id: assetId }, render: ['renderPowerChart'] }
+                { datasetName: 'pdu', render: ['renderPDUInfo'] },
+                { datasetName: 'pduCircuits', render: ['renderCircuitTable'] },
+                { datasetName: 'pduHistory', render: ['renderPowerChart'] }
             ];
 
             this.baseInfoConfig = [
                 { key: 'name', selector: '.pdu-name' },
                 { key: 'zone', selector: '.pdu-zone' },
+                { key: 'statusLabel', selector: '.pdu-status' },
                 { key: 'status', selector: '.pdu-status', dataAttr: 'status' }
             ];
 
-            this.pduInfoConfig = [
-                { key: 'totalPower', selector: '.pdu-power', suffix: 'kW' },
-                { key: 'totalCurrent', selector: '.pdu-current', suffix: 'A' },
-                { key: 'voltage', selector: '.pdu-voltage', suffix: 'V' },
-                { key: 'activeCircuits', selector: '.pdu-active-circuits' },
-                { key: 'powerFactor', selector: '.pdu-pf' }
-            ];
-
-            // _getTableOption을 먼저 바인딩
-            this._getTableOption = getTableOption.bind(this);
+            // 동적 필드 컨테이너 selector (Summary Bar)
+            this.fieldsContainerSelector = '.summary-bar';
 
             this.tableConfig = {
                 selector: '.table-container',
@@ -476,20 +485,21 @@
                         }
                     }
                 ],
-                optionBuilder: this._getTableOption
+                optionBuilder: getTableOption
             };
 
+            // chartConfig: API fields를 활용한 동적 렌더링
             this.chartConfig = {
-                selector: '.chart-container',
                 xKey: 'timestamps',
-                series: [
-                    { yKey: 'power', name: 'Power (kW)', color: '#3b82f6', smooth: true, areaStyle: true },
-                    { yKey: 'current', name: 'Current (A)', color: '#f59e0b', smooth: true, yAxisIndex: 1 }
-                ],
+                valuesKey: 'values',
+                styleMap: {
+                    power: { color: '#3b82f6', smooth: true, areaStyle: true, yAxisIndex: 0 },
+                    current: { color: '#f59e0b', smooth: true, yAxisIndex: 1 }
+                },
                 optionBuilder: getDualAxisChartOption
             };
 
-            this.renderPDUInfo = renderPDUInfo.bind(this, [...this.baseInfoConfig, ...this.pduInfoConfig]);
+            this.renderPDUInfo = renderPDUInfo.bind(this);
             this.renderCircuitTable = renderCircuitTable.bind(this, this.tableConfig);
             this.renderPowerChart = renderPowerChart.bind(this, this.chartConfig);
 
@@ -497,7 +507,7 @@
             this.hideDetail = hideDetail.bind(this);
             this._switchTab = switchTab.bind(this);
 
-            this.customEvents = { click: '@pduClicked' };
+            this.customEvents = { click: '@assetClicked' };
             bind3DEvents(this, this.customEvents);
 
             this.templateConfig = { popup: 'popup-pdu' };
@@ -515,7 +525,7 @@
             const { htmlCode, cssCode } = this.properties.publishCode || {};
             this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
             this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig, this.tableConfig);
 
             applyShadowPopupMixin(this, {
                 getHTML: this.getPopupHTML,
@@ -526,7 +536,7 @@
             applyEChartsMixin(this);
             applyTabulatorMixin(this);
 
-            console.log('[PDU] Registered:', assetId);
+            console.log('[PDU] Registered:', this._defaultAssetId);
         }
 
         function showDetail() {
@@ -535,11 +545,10 @@
 
             fx.go(
                 this.datasetInfo,
-                fx.each(({ datasetName, param, render }) =>
+                fx.each(({ datasetName, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, param),
-                        result => result?.response?.data,
-                        data => data && render.forEach(fn => this[fn](data))
+                        Wkit.fetchData(this.page, datasetName, { assetId: this._defaultAssetId }),
+                        response => response && fx.each(fn => this[fn](response), render)
                     )
                 )
             ).catch(e => {
@@ -554,61 +563,105 @@
             const buttons = this.popupQueryAll('.tab-btn');
             const panels = this.popupQueryAll('.tab-panel');
 
-            buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
-            panels.forEach(panel => panel.classList.toggle('active', panel.dataset.panel === tabName));
+            fx.go(buttons, fx.each(btn => btn.classList.toggle('active', btn.dataset.tab === tabName)));
+            fx.go(panels, fx.each(panel => panel.classList.toggle('active', panel.dataset.panel === tabName)));
 
             if (tabName === 'power') {
-                const chart = this.getChart();
+                const chart = this.getChart('.chart-container');
                 if (chart) setTimeout(() => chart.resize(), 10);
             } else if (tabName === 'circuits') {
-                const table = this.getTable();
-                if (table) table.redraw(true);
+                if (this.isTableReady && this.isTableReady('.table-container')) {
+                    const table = this.getTable('.table-container');
+                    setTimeout(() => table.redraw(true), 10);
+                }
             }
         }
 
-        function renderPDUInfo(config, data) {
+        function renderPDUInfo({ response }) {
+            const { data } = response;
+            if (!data) return;
+
+            // 기본 정보 렌더링 (name, zone, status)
             fx.go(
-                config,
-                fx.each(({ key, selector, dataAttr, suffix }) => {
+                this.baseInfoConfig,
+                fx.each(({ key, selector, dataAttr }) => {
                     const el = this.popupQuery(selector);
                     if (!el) return;
                     const value = data[key];
-                    el.textContent = suffix ? `${value}${suffix}` : value;
-                    dataAttr && (el.dataset[dataAttr] = value);
+                    el.textContent = value;
+                    if (dataAttr) el.dataset[dataAttr] = value;
                 })
             );
+
+            // 동적 필드 렌더링 (API fields 배열 사용 - Summary Bar)
+            const container = this.popupQuery(this.fieldsContainerSelector);
+            if (!container || !data.fields) return;
+
+            const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
+            container.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
+                const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
+                return `<div class="summary-item">
+                    <span class="summary-label">${label}</span>
+                    <span class="summary-value">${displayValue ?? '-'}</span>
+                </div>`;
+            }).join('');
         }
 
-        function renderCircuitTable(config, data) {
-            const { optionBuilder } = config;
-            const option = optionBuilder(config, data.circuits);
-            this.updateTable('.table-container', data.circuits, option);
+        function renderCircuitTable(config, { response }) {
+            const { data } = response;
+            if (!data) return;
+            const circuits = data.circuits || data;
+            this.updateTable(config.selector, circuits);
         }
 
-        function renderPowerChart(config, data) {
-            const { optionBuilder, ...chartConfig } = config;
-            const option = optionBuilder(chartConfig, data);
+        function renderPowerChart(config, { response }) {
+            const { data } = response;
+            if (!data) return;
+            const option = config.optionBuilder(config, data);
             this.updateChart('.chart-container', option);
         }
 
-        function getTableOption(config, data) {
+        function getTableOption(columns) {
             return {
                 layout: 'fitColumns',
                 responsiveLayout: 'collapse',
-                height: 250,
                 placeholder: 'No circuits found',
                 initialSort: [{ column: 'power', dir: 'desc' }],
-                columns: config.columns
+                columns
             };
         }
 
         function getDualAxisChartOption(config, data) {
-            const { xKey, series: seriesConfig } = config;
+            const { xKey, valuesKey, styleMap } = config;
+            const { fields } = data;
+            const values = data[valuesKey];
+
+            // API fields를 기반으로 series 생성
+            const seriesData = fields.map(field => {
+                const style = styleMap[field.key] || {};
+                return {
+                    key: field.key,
+                    name: field.label,
+                    unit: field.unit,
+                    ...style
+                };
+            });
+
+            // yAxis 설정: fields의 unit 정보 활용
+            const yAxisUnits = [...new Set(seriesData.map(s => s.unit))];
+            const yAxes = yAxisUnits.map((unit, idx) => ({
+                type: 'value',
+                name: unit,
+                position: idx === 0 ? 'left' : 'right',
+                axisLine: { show: true, lineStyle: { color: seriesData.find(s => s.unit === unit)?.color || '#888' } },
+                axisLabel: { color: '#888', fontSize: 10 },
+                splitLine: idx === 0 ? { lineStyle: { color: '#333' } } : { show: false }
+            }));
 
             return {
                 grid: { left: 50, right: 50, top: 35, bottom: 24 },
                 legend: {
-                    data: seriesConfig.map(s => s.name),
+                    data: seriesData.map(s => s.name),
                     top: 0,
                     textStyle: { color: '#8892a0', fontSize: 11 }
                 },
@@ -624,27 +677,19 @@
                     axisLine: { lineStyle: { color: '#333' } },
                     axisLabel: { color: '#888', fontSize: 10 }
                 },
-                yAxis: [
-                    {
-                        type: 'value', name: 'kW', position: 'left',
-                        axisLine: { show: true, lineStyle: { color: '#3b82f6' } },
-                        axisLabel: { color: '#888', fontSize: 10 },
-                        splitLine: { lineStyle: { color: '#333' } }
-                    },
-                    {
-                        type: 'value', name: 'A', position: 'right',
-                        axisLine: { show: true, lineStyle: { color: '#f59e0b' } },
-                        axisLabel: { color: '#888', fontSize: 10 },
-                        splitLine: { show: false }
-                    }
-                ],
-                series: seriesConfig.map(({ yKey, name, color, smooth, areaStyle, yAxisIndex = 0 }) => ({
-                    name, type: 'line', yAxisIndex,
-                    data: data[yKey], smooth, symbol: 'none',
+                yAxis: yAxes,
+                series: seriesData.map(({ key, name, color, smooth, areaStyle, yAxisIndex = 0 }) => ({
+                    name,
+                    type: 'line',
+                    yAxisIndex,
+                    data: values[key],
+                    smooth,
+                    symbol: 'none',
                     lineStyle: { color, width: 2 },
                     areaStyle: areaStyle ? {
                         color: {
-                            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
                             colorStops: [
                                 { offset: 0, color: hexToRgba(color, 0.3) },
                                 { offset: 1, color: hexToRgba(color, 0) }
@@ -662,10 +707,14 @@
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
-        function onPopupCreated({ chartSelector, tableSelector, events }) {
-            chartSelector && this.createChart(chartSelector);
-            tableSelector && this.createTable(tableSelector);
-            events && this.bindPopupEvents(events);
+        function onPopupCreated(popupConfig, tableConfig) {
+            const { chartSelector, tableSelector, events } = popupConfig;
+            if (chartSelector) this.createChart(chartSelector);
+            if (tableSelector) {
+                const tableOptions = tableConfig.optionBuilder(tableConfig.columns);
+                this.createTable(tableSelector, tableOptions);
+            }
+            if (events) this.bindPopupEvents(events);
         }
 
         function onInstanceUnLoad() {

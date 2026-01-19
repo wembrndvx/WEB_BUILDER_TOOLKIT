@@ -814,7 +814,7 @@ const { each } = fx;
 // EVENT BUS CLEANUP
 // ======================
 
-offEventBusHandlers.call(this, this.eventBusHandlers);
+offEventBusHandlers(this.eventBusHandlers);
 this.eventBusHandlers = null;
 
 // ======================

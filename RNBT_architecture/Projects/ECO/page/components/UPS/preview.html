@@ -104,45 +104,8 @@
 
                         <!-- Body -->
                         <div class="popup-body">
-                            <!-- Current Values -->
-                            <div class="current-values">
-                                <div class="value-card">
-                                    <div class="value-label">Load</div>
-                                    <div class="value-number">
-                                        <span class="ups-load">-</span>
-                                    </div>
-                                </div>
-                                <div class="value-card">
-                                    <div class="value-label">Battery</div>
-                                    <div class="value-number">
-                                        <span class="ups-battery">-</span>
-                                    </div>
-                                </div>
-                                <div class="value-card">
-                                    <div class="value-label">Input</div>
-                                    <div class="value-number">
-                                        <span class="ups-input-voltage">-</span>
-                                    </div>
-                                </div>
-                                <div class="value-card">
-                                    <div class="value-label">Output</div>
-                                    <div class="value-number">
-                                        <span class="ups-output-voltage">-</span>
-                                    </div>
-                                </div>
-                                <div class="value-card">
-                                    <div class="value-label">Runtime</div>
-                                    <div class="value-number">
-                                        <span class="ups-runtime">-</span>
-                                    </div>
-                                </div>
-                                <div class="value-card">
-                                    <div class="value-label">Mode</div>
-                                    <div class="value-number mode">
-                                        <span class="ups-mode">-</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Dynamic Fields Container -->
+                            <div class="fields-container"></div>
 
                             <!-- Chart -->
                             <div class="chart-section">
@@ -264,7 +227,7 @@
                 gap: 24px;
             }
 
-            .current-values {
+            .fields-container {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
                 gap: 12px;
@@ -283,16 +246,10 @@
                 text-transform: uppercase;
             }
 
-            .value-number {
+            .value-data {
                 font-size: 20px;
                 font-weight: 600;
                 color: #e0e6ed;
-            }
-
-            .value-number.mode {
-                font-size: 14px;
-                text-transform: uppercase;
-                color: #3b82f6;
             }
 
             .chart-section {
@@ -338,11 +295,41 @@
             }
         };
 
-        // Mock data
+        // Mock data - API 응답 구조에 맞춤 (fields 배열 포함)
         const mockUPSData = {
-            normal: { name: 'UPS-A01', zone: 'Server Room A', status: 'normal', load: 45, batteryLevel: 100, inputVoltage: 220, outputVoltage: 220, runtime: 120, mode: 'Online' },
-            warning: { name: 'UPS-B02', zone: 'Server Room B', status: 'warning', load: 78, batteryLevel: 65, inputVoltage: 218, outputVoltage: 220, runtime: 45, mode: 'Online' },
-            critical: { name: 'UPS-C03', zone: 'Server Room C', status: 'critical', load: 95, batteryLevel: 15, inputVoltage: 0, outputVoltage: 220, runtime: 8, mode: 'Battery' }
+            normal: {
+                name: 'UPS-A01', statusLabel: 'Normal', status: 'normal',
+                fields: [
+                    { key: 'load', label: 'Load', value: 45, unit: '%', order: 1 },
+                    { key: 'battery', label: 'Battery', value: 100, unit: '%', order: 2 },
+                    { key: 'inputVoltage', label: 'Input', value: 220, unit: 'V', order: 3 },
+                    { key: 'outputVoltage', label: 'Output', value: 220, unit: 'V', order: 4 },
+                    { key: 'runtime', label: 'Runtime', value: 120, unit: 'min', order: 5 },
+                    { key: 'mode', label: 'Mode', valueLabel: 'Online', order: 6 }
+                ]
+            },
+            warning: {
+                name: 'UPS-B02', statusLabel: 'Warning', status: 'warning',
+                fields: [
+                    { key: 'load', label: 'Load', value: 78, unit: '%', order: 1 },
+                    { key: 'battery', label: 'Battery', value: 65, unit: '%', order: 2 },
+                    { key: 'inputVoltage', label: 'Input', value: 218, unit: 'V', order: 3 },
+                    { key: 'outputVoltage', label: 'Output', value: 220, unit: 'V', order: 4 },
+                    { key: 'runtime', label: 'Runtime', value: 45, unit: 'min', order: 5 },
+                    { key: 'mode', label: 'Mode', valueLabel: 'Online', order: 6 }
+                ]
+            },
+            critical: {
+                name: 'UPS-C03', statusLabel: 'Critical', status: 'critical',
+                fields: [
+                    { key: 'load', label: 'Load', value: 95, unit: '%', order: 1 },
+                    { key: 'battery', label: 'Battery', value: 15, unit: '%', order: 2 },
+                    { key: 'inputVoltage', label: 'Input', value: 0, unit: 'V', order: 3 },
+                    { key: 'outputVoltage', label: 'Output', value: 220, unit: 'V', order: 4 },
+                    { key: 'runtime', label: 'Runtime', value: 8, unit: 'min', order: 5 },
+                    { key: 'mode', label: 'Mode', valueLabel: 'Battery', order: 6 }
+                ]
+            }
         };
 
         let currentStatus = 'normal';
@@ -361,7 +348,15 @@
                 battery.push(Math.round((95 + (Math.random() - 0.5) * 10) * 10) / 10);
             }
 
-            return { timestamps, load, battery };
+            // API fields 구조에 맞춤
+            return {
+                timestamps,
+                values: { load, battery },
+                fields: [
+                    { key: 'load', label: 'Load', unit: '%' },
+                    { key: 'battery', label: 'Battery', unit: '%' }
+                ]
+            };
         }
 
         function getMockData(datasetName) {
@@ -501,43 +496,40 @@
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
-            const assetId = this.setter.ecoAssetInfo.assetId;
+            // register.js와 동일한 구조
+            this._defaultAssetId = this.setter?.ecoAssetInfo?.assetId || this.id;
 
             this.datasetInfo = [
-                { datasetName: 'ups', param: { id: assetId }, render: ['renderUPSInfo'] },
-                { datasetName: 'upsHistory', param: { id: assetId }, render: ['renderChart'] }
+                { datasetName: 'ups', render: ['renderUPSInfo'] },
+                { datasetName: 'upsHistory', render: ['renderChart'] }
             ];
 
             this.baseInfoConfig = [
                 { key: 'name', selector: '.ups-name' },
-                { key: 'zone', selector: '.ups-zone' },
+                { key: 'statusLabel', selector: '.ups-status' },
                 { key: 'status', selector: '.ups-status', dataAttr: 'status' }
             ];
 
-            this.upsInfoConfig = [
-                { key: 'load', selector: '.ups-load', suffix: '%' },
-                { key: 'batteryLevel', selector: '.ups-battery', suffix: '%' },
-                { key: 'inputVoltage', selector: '.ups-input-voltage', suffix: 'V' },
-                { key: 'outputVoltage', selector: '.ups-output-voltage', suffix: 'V' },
-                { key: 'runtime', selector: '.ups-runtime', suffix: 'min' },
-                { key: 'mode', selector: '.ups-mode' }
-            ];
+            // 동적 필드 컨테이너 selector
+            this.fieldsContainerSelector = '.fields-container';
 
+            // chartConfig: API fields를 활용한 동적 렌더링
             this.chartConfig = {
                 xKey: 'timestamps',
-                series: [
-                    { yKey: 'load', name: 'Load', color: '#3b82f6', smooth: true, areaStyle: true },
-                    { yKey: 'battery', name: 'Battery', color: '#22c55e', smooth: true }
-                ],
+                valuesKey: 'values',
+                styleMap: {
+                    load: { color: '#3b82f6', smooth: true, areaStyle: true },
+                    battery: { color: '#22c55e', smooth: true }
+                },
                 optionBuilder: getMultiLineChartOption
             };
 
-            this.renderUPSInfo = renderUPSInfo.bind(this, [...this.baseInfoConfig, ...this.upsInfoConfig]);
+            this.renderUPSInfo = renderUPSInfo.bind(this);
             this.renderChart = renderChart.bind(this, this.chartConfig);
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
 
-            this.customEvents = { click: '@upsClicked' };
+            this.customEvents = { click: '@assetClicked' };
             bind3DEvents(this, this.customEvents);
 
             this.templateConfig = { popup: 'popup-ups' };
@@ -559,18 +551,17 @@
 
             applyEChartsMixin(this);
 
-            console.log('[UPS] Registered:', assetId);
+            console.log('[UPS] Registered:', this._defaultAssetId);
         }
 
         function showDetail() {
             this.showPopup();
             fx.go(
                 this.datasetInfo,
-                fx.each(({ datasetName, param, render }) =>
+                fx.each(({ datasetName, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, param),
-                        result => result?.response?.data,
-                        data => data && render.forEach(fn => this[fn](data))
+                        Wkit.fetchData(this.page, datasetName, { assetId: this._defaultAssetId }),
+                        response => response && fx.each(fn => this[fn](response), render)
                     )
                 )
             ).catch(e => {
@@ -579,20 +570,39 @@
             });
         }
 
-        function renderUPSInfo(config, data) {
+        function renderUPSInfo({ response }) {
+            const { data } = response;
+            if (!data) return;
+
+            // 기본 정보 렌더링 (name, status)
             fx.go(
-                config,
-                fx.each(({ key, selector, dataAttr, suffix }) => {
+                this.baseInfoConfig,
+                fx.each(({ key, selector, dataAttr }) => {
                     const el = this.popupQuery(selector);
                     if (!el) return;
                     const value = data[key];
-                    el.textContent = suffix ? `${value}${suffix}` : value;
+                    el.textContent = value;
                     dataAttr && (el.dataset[dataAttr] = value);
                 })
             );
+
+            // 동적 필드 렌더링 (API fields 배열 사용)
+            const container = this.popupQuery(this.fieldsContainerSelector);
+            if (!container || !data.fields) return;
+
+            const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
+            container.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
+                const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
+                return `<div class="value-card">
+                    <div class="value-label">${label}</div>
+                    <div class="value-data">${displayValue ?? '-'}</div>
+                </div>`;
+            }).join('');
         }
 
-        function renderChart(config, data) {
+        function renderChart(config, { response }) {
+            const { data } = response;
+            if (!data) return;
             const { optionBuilder, ...chartConfig } = config;
             const option = optionBuilder(chartConfig, data);
             this.updateChart('.chart-container', option);
@@ -603,12 +613,25 @@
         }
 
         function getMultiLineChartOption(config, data) {
-            const { xKey, series: seriesConfig } = config;
+            const { xKey, valuesKey, styleMap } = config;
+            const { fields } = data;
+            const values = data[valuesKey];
+
+            // API fields를 기반으로 series 생성
+            const seriesData = fields.map(field => {
+                const style = styleMap[field.key] || {};
+                return {
+                    key: field.key,
+                    name: field.label,
+                    unit: field.unit,
+                    ...style
+                };
+            });
 
             return {
                 grid: { left: 45, right: 16, top: 30, bottom: 24 },
                 legend: {
-                    data: seriesConfig.map(s => s.name),
+                    data: seriesData.map(s => s.name),
                     top: 0,
                     textStyle: { color: '#8892a0', fontSize: 11 }
                 },
@@ -632,10 +655,10 @@
                     axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
                     splitLine: { lineStyle: { color: '#333' } }
                 },
-                series: seriesConfig.map(({ yKey, name, color, smooth, areaStyle }) => ({
+                series: seriesData.map(({ key, name, color, smooth, areaStyle }) => ({
                     name,
                     type: 'line',
-                    data: data[yKey],
+                    data: values[key],
                     smooth,
                     symbol: 'none',
                     lineStyle: { color, width: 2 },

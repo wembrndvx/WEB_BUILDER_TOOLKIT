@@ -14,20 +14,28 @@ const { offEventBusHandlers } = Wkit;
 const { each } = fx;
 
 // ======================
-// CLEANUP
+// STOP INTERVALS
 // ======================
 
 if (this.stopAllIntervals) {
     this.stopAllIntervals();
 }
-this.intervals = null;
+this.refreshIntervals = null;
 this.startAllIntervals = null;
 this.stopAllIntervals = null;
+
+// ======================
+// OFF EVENT HANDLERS
+// ======================
 
 if (this.eventBusHandlers) {
     offEventBusHandlers(this.eventBusHandlers);
     this.eventBusHandlers = null;
 }
+
+// ======================
+// UNREGISTER MAPPINGS
+// ======================
 
 if (this.globalDataMappings) {
     fx.go(

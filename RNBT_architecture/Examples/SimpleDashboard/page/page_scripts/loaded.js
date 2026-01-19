@@ -51,33 +51,38 @@ fx.go(
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => {
         const params = this.currentParams?.[topic] || {};
-        GlobalDataPublisher.fetchAndPublish(topic, this, params);
+        GlobalDataPublisher.fetchAndPublish(topic, this, params)
+            .catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
     })
 );
 
 // ======================
-// AUTO REFRESH
+// INTERVAL MANAGEMENT
 // ======================
 
-this.intervals = {};
+this.refreshIntervals = {};
 
-this.startAllIntervals = function() {
+this.startAllIntervals = () => {
     fx.go(
         this.globalDataMappings,
-        fx.filter(m => m.refreshInterval),
         each(({ topic, refreshInterval }) => {
-            this.intervals[topic] = setInterval(() => {
-                const params = this.currentParams?.[topic] || {};
-                GlobalDataPublisher.fetchAndPublish(topic, this, params);
-            }, refreshInterval);
+            if (refreshInterval) {
+                this.refreshIntervals[topic] = setInterval(() => {
+                    const params = this.currentParams?.[topic] || {};
+                    GlobalDataPublisher.fetchAndPublish(topic, this, params)
+                        .catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
+                }, refreshInterval);
+            }
         })
     );
     console.log('[Page] Auto-refresh intervals started');
 };
 
-this.stopAllIntervals = function() {
-    Object.values(this.intervals).forEach(clearInterval);
-    this.intervals = {};
+this.stopAllIntervals = () => {
+    fx.go(
+        Object.values(this.refreshIntervals || {}),
+        each(clearInterval)
+    );
     console.log('[Page] Auto-refresh intervals stopped');
 };
 

@@ -388,13 +388,20 @@ const config = {
 
 #### Chart Config (ECharts)
 ```javascript
+// chartConfig: API fields를 활용한 동적 렌더링
+// - xKey, valuesKey: API 응답 구조에 맞게 수정 필요
+// - series 정보는 API response의 fields 배열에서 가져옴
+// - 색상 등 스타일 정보만 로컬에서 정의
 const chartConfig = {
-    xKey: 'timestamps',
-    series: [
-        { yKey: 'load', name: 'Load', color: '#3b82f6', smooth: true },
-        { yKey: 'battery', name: 'Battery', color: '#22c55e' }
-    ],
-    optionBuilder: getMultiLineChartOption
+    xKey: 'timestamps',           // ← API 응답의 x축 데이터 키
+    valuesKey: 'values',          // ← API 응답의 시계열 데이터 객체 키
+    // styleMap의 key는 API History 응답의 fields[].key와 일치해야 함
+    // 예: fields: [{ key: 'temperature', label: '온도', unit: '°C' }]
+    //     → styleMap: { temperature: { color: '#3b82f6', ... } }
+    styleMap: {
+        TBD_fieldKey: { color: '#3b82f6', smooth: true }
+    },
+    optionBuilder: getLineChartOption
 };
 ```
 

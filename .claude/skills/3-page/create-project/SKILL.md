@@ -170,7 +170,7 @@ components/[ComponentName]/
  * 책임: 이벤트 핸들러 등록, currentParams 초기화
  */
 
-const { onEventBusHandlers } = Weventbus;
+const { onEventBusHandlers } = Wkit;
 
 // ==================
 // CURRENT PARAMS
@@ -225,7 +225,7 @@ console.log('[Page] before_load completed');
  * 책임: 데이터 매핑 등록, 초기 발행, interval 시작
  */
 
-const { registerMapping, fetchAndPublish, startAllIntervals } = GlobalDataPublisher;
+const { each } = fx;
 
 // ==================
 // DATA MAPPINGS
@@ -234,54 +234,74 @@ const { registerMapping, fetchAndPublish, startAllIntervals } = GlobalDataPublis
 this.globalDataMappings = [
     {
         topic: 'stats',
-        datasetName: 'statsApi',
-        param: {}
+        datasetInfo: {
+            datasetName: 'statsApi',
+            param: {}
+        }
     },
     {
         topic: 'tableData',
-        datasetName: 'tableApi',
-        param: this.currentParams.tableData
+        datasetInfo: {
+            datasetName: 'tableApi',
+            param: this.currentParams.tableData
+        },
+        refreshInterval: 30000  // 30초
     },
     {
         topic: 'chartData',
-        datasetName: 'chartApi',
-        param: this.currentParams.chartData
+        datasetInfo: {
+            datasetName: 'chartApi',
+            param: this.currentParams.chartData
+        },
+        refreshInterval: 15000  // 15초
     }
 ];
 
-// 매핑 등록
+// ==================
+// INITIALIZATION
+// ==================
+
 fx.go(
     this.globalDataMappings,
-    fx.each(registerMapping)
+    each(GlobalDataPublisher.registerMapping),
+    each(({ topic }) => this.currentParams[topic] = this.currentParams[topic] || {}),
+    each(({ topic }) =>
+        GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic])
+            .catch(err => console.error(`[fetchAndPublish:${topic}]`, err))
+    )
 );
 
 // ==================
-// REFRESH INTERVALS
+// INTERVAL MANAGEMENT
 // ==================
 
-this.refreshIntervals = {
-    stats: 10000,      // 10초
-    tableData: 30000,  // 30초
-    chartData: 15000   // 15초
+this.startAllIntervals = () => {
+    this.refreshIntervals = {};
+
+    fx.go(
+        this.globalDataMappings,
+        each(({ topic, refreshInterval }) => {
+            if (refreshInterval) {
+                this.refreshIntervals[topic] = setInterval(() => {
+                    GlobalDataPublisher.fetchAndPublish(
+                        topic,
+                        this,
+                        this.currentParams[topic] || {}
+                    ).catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
+                }, refreshInterval);
+            }
+        })
+    );
 };
 
-// ==================
-// INITIAL FETCH
-// ==================
+this.stopAllIntervals = () => {
+    fx.go(
+        Object.values(this.refreshIntervals || {}),
+        each(interval => clearInterval(interval))
+    );
+};
 
-fx.go(
-    this.globalDataMappings,
-    fx.each(({ topic }) => {
-        const param = this.currentParams[topic] || {};
-        fetchAndPublish(topic, this, param);
-    })
-);
-
-// ==================
-// START INTERVALS
-// ==================
-
-startAllIntervals(this, this.refreshIntervals, this.currentParams);
+this.startAllIntervals();
 
 console.log('[Page] loaded completed');
 ```
@@ -296,43 +316,37 @@ console.log('[Page] loaded completed');
  * 책임: interval 정지, 이벤트 해제, 매핑 해제
  */
 
-const { offEventBusHandlers } = Weventbus;
-const { stopAllIntervals, unregisterMapping } = GlobalDataPublisher;
+const { offEventBusHandlers } = Wkit;
+const { each } = fx;
 
 // ==================
 // STOP INTERVALS
 // ==================
 
-if (this.refreshIntervals) {
-    stopAllIntervals(this);
-    this.refreshIntervals = null;
+if (this.stopAllIntervals) {
+    this.stopAllIntervals();
 }
+this.refreshIntervals = null;
+this.startAllIntervals = null;
+this.stopAllIntervals = null;
 
 // ==================
 // OFF EVENT HANDLERS
 // ==================
 
-if (this.eventBusHandlers) {
-    offEventBusHandlers(this.eventBusHandlers);
-    this.eventBusHandlers = null;
-}
+offEventBusHandlers(this.eventBusHandlers);
+this.eventBusHandlers = null;
 
 // ==================
 // UNREGISTER MAPPINGS
 // ==================
 
-if (this.globalDataMappings) {
-    fx.go(
-        this.globalDataMappings,
-        fx.each(mapping => unregisterMapping(this, mapping))
-    );
-    this.globalDataMappings = null;
-}
+fx.go(
+    this.globalDataMappings,
+    each(({ topic }) => GlobalDataPublisher.unregisterMapping(topic))
+);
 
-// ==================
-// CLEAR PARAMS
-// ==================
-
+this.globalDataMappings = null;
 this.currentParams = null;
 
 console.log('[Page] before_unload completed');
@@ -586,10 +600,12 @@ function renderData(config, { response }) {
 | `this.eventBusHandlers = {...}` | `this.eventBusHandlers = null` |
 | `onEventBusHandlers(...)` | `offEventBusHandlers(...)` |
 | `this.globalDataMappings = [...]` | `this.globalDataMappings = null` |
-| `this.currentParams = {...}` | `this.currentParams = null` |
-| `this.refreshIntervals = {...}` | `this.refreshIntervals = null` |
-| `registerMapping(...)` | `unregisterMapping(...)` |
-| `startAllIntervals(...)` | `stopAllIntervals(...)` |
+| `this.currentParams = {}` | `this.currentParams = null` |
+| `this.refreshIntervals = {}` | `this.refreshIntervals = null` |
+| `this.startAllIntervals = () => {...}` | `this.startAllIntervals = null` |
+| `this.stopAllIntervals = () => {...}` | `this.stopAllIntervals = null` |
+| `GlobalDataPublisher.registerMapping(...)` | `GlobalDataPublisher.unregisterMapping(...)` |
+| `setInterval(...)` | `clearInterval(...)` |
 
 ### 컴포넌트
 
