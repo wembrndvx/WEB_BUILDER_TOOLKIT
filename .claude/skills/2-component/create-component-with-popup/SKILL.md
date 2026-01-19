@@ -77,6 +77,6 @@ components/[ComponentName]/
 
 | 참조 | 위치 |
 |------|------|
-| UPS (기본) | `/RNBT_architecture/Projects/ECO/page/components/UPS/` |
-| PDU (탭 UI + 테이블) | `/RNBT_architecture/Projects/ECO/page/components/PDU/` |
-| CRAC (듀얼 Y축 차트) | `/RNBT_architecture/Projects/ECO/page/components/CRAC/` |
+| UPS (기본) | [/RNBT_architecture/Projects/ECO/page/components/UPS/](/RNBT_architecture/Projects/ECO/page/components/UPS/) |
+| PDU (탭 UI + 테이블) | [/RNBT_architecture/Projects/ECO/page/components/PDU/](/RNBT_architecture/Projects/ECO/page/components/PDU/) |
+| CRAC (듀얼 Y축 차트) | [/RNBT_architecture/Projects/ECO/page/components/CRAC/](/RNBT_architecture/Projects/ECO/page/components/CRAC/) |

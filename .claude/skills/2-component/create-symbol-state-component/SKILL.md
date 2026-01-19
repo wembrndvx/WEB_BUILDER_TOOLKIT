@@ -96,4 +96,4 @@ function getStatus() {
 
 | 참조 | 위치 |
 |------|------|
-| 예제 | `/RNBT_architecture/Projects/Symbol_Test/page/components/Cube3DSymbol/` |
+| 예제 | [/RNBT_architecture/Projects/Symbol_Test/page/components/Cube3DSymbol/](/RNBT_architecture/Projects/Symbol_Test/page/components/Cube3DSymbol/) |

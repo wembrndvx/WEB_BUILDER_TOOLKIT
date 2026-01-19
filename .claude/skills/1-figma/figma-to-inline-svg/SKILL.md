@@ -346,4 +346,4 @@ create-symbol-state-component (동적)
 
 | 예제 | 참고 시점 | 특징 |
 |------|----------|------|
-| `/Figma_Conversion/Static_Components/Symbol_Test/symbol-1-198/` | 인라인 SVG 예제 | 3D 큐브 심볼 |
+| [/Figma_Conversion/Static_Components/Symbol_Test/symbol-1-198/](/Figma_Conversion/Static_Components/Symbol_Test/symbol-1-198/) | 인라인 SVG 예제 | 3D 큐브 심볼 |

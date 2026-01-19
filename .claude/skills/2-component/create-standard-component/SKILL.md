@@ -125,4 +125,4 @@ this.customEvents = {
 
 | 문서 | 위치 |
 |------|------|
-| 예제 | `/RNBT_architecture/Examples/SimpleDashboard/` |
+| 예제 | [/RNBT_architecture/Examples/SimpleDashboard/](/RNBT_architecture/Examples/SimpleDashboard/) |

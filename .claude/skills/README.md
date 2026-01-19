@@ -141,8 +141,8 @@ create-component-with-popup ─→ create-project
 
 | 문서 | 위치 | 내용 |
 |------|------|------|
-| CODING_STYLE.md | `/.claude/guides/` | 함수형 코딩 지침, CSS 원칙 |
-| RNBT README | `/RNBT_architecture/README.md` | 아키텍처 설계 문서 |
+| CODING_STYLE.md | [/.claude/guides/](/.claude/guides/) | 함수형 코딩 지침, CSS 원칙 |
+| RNBT README | [/RNBT_architecture/README.md](/RNBT_architecture/README.md) | 아키텍처 설계 문서 |
 
 ---
 
@@ -150,5 +150,5 @@ create-component-with-popup ─→ create-project
 
 1. **정적/동적 분리**: Figma 단계에서는 스크립트 없이 순수 퍼블리싱만
 2. **Figma MCP 필요**: figma-to-* Skills는 Figma Desktop + MCP 서버 필요
-3. **CODING_STYLE 참조**: 모든 코드 작성 시 `/.claude/guides/CODING_STYLE.md` 참조
+3. **CODING_STYLE 참조**: 모든 코드 작성 시 [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) 참조
 

@@ -114,5 +114,5 @@ Examples/[project_name]/
 
 | 참조 | 위치 |
 |------|------|
-| 컴포넌트 생성 | `/.claude/skills/2-component/create-standard-component/SKILL.md` |
-| 예제 | `/RNBT_architecture/Examples/SimpleDashboard/` |
+| 컴포넌트 생성 | [/.claude/skills/2-component/create-standard-component/SKILL.md](/.claude/skills/2-component/create-standard-component/SKILL.md) |
+| 예제 | [/RNBT_architecture/Examples/SimpleDashboard/](/RNBT_architecture/Examples/SimpleDashboard/) |
