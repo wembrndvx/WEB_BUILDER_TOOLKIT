@@ -9,7 +9,7 @@
 | 문서 | 역할 | 내용 |
 |------|------|------|
 | **이 문서 (TEST_SCENARIOS.md)** | 테스트 명세서 (What) | 무엇을 테스트해야 하는가 - 테스트 케이스 목록과 검증 기준 |
-| [TESTING_GUIDE.md](../tests/TESTING_GUIDE.md) | 테스트 구현 가이드 (How) | 어떻게 테스트를 작성하는가 - Mock 구현, 테스트 작성법 |
+| [TESTING_GUIDE.md](/RNBT_architecture/tests/TESTING_GUIDE.md) | 테스트 구현 가이드 (How) | 어떻게 테스트를 작성하는가 - Mock 구현, 테스트 작성법 |
 
 ```
 TEST_SCENARIOS.md          TESTING_GUIDE.md

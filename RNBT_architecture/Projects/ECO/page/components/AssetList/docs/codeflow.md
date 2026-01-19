@@ -1,7 +1,7 @@
 # AssetList 코드 흐름 문서
 
 이 문서는 AssetList 컴포넌트의 코드 흐름을 설명합니다.
-트리 렌더링 상세 내용은 [TREE_RENDERING.md](TREE_RENDERING.md)를 참조하세요.
+트리 렌더링 상세 내용은 [TREE_RENDERING.md](/RNBT_architecture/Projects/ECO/page/components/AssetList/docs/TREE_RENDERING.md)를 참조하세요.
 
 ---
 

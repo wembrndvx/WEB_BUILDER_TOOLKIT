@@ -34,5 +34,7 @@ npm run serve
 
 ## 문서
 
+> ⚠️ **작업 전 반드시 아래 문서들을 Read 도구로 읽으세요**
+
 - **작업 지침**: [CLAUDE.md](./CLAUDE.md) - 워크플로우와 규칙
 - **컴포넌트 구조**: [PUBLISHING_COMPONENT_STRUCTURE.md](./PUBLISHING_COMPONENT_STRUCTURE.md) - 퍼블리싱용 컴포넌트 구조

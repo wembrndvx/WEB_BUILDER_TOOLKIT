@@ -72,7 +72,7 @@ function initComponent() {
     // RENDER FUNCTIONS
     // ======================
     this.renderCRACInfo = renderCRACInfo.bind(this);
-    this.renderChart = renderChart.bind(this);
+    this.renderChart = renderChart.bind(this, this.chartConfig);
 
     // ======================
     // PUBLIC METHODS
@@ -163,10 +163,10 @@ function renderCRACInfo({ response }) {
     }).join('');
 }
 
-function renderChart({ response }) {
+function renderChart(config, { response }) {
     const { data } = response;
     if (!data) return;
-    const { optionBuilder, ...chartConfig } = this.chartConfig;
+    const { optionBuilder, ...chartConfig } = config;
     const option = optionBuilder(chartConfig, data);
     this.updateChart('.chart-container', option);
 }

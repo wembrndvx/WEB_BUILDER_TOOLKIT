@@ -131,7 +131,7 @@ PopupMixin.__reset();                         // 상태 초기화
 
 ## 테스트 케이스 매핑
 
-이 테스트들은 `docs/TEST_SCENARIOS.md`의 테스트 케이스를 구현합니다:
+이 테스트들은 `/RNBT_architecture/docs/TEST_SCENARIOS.md`의 테스트 케이스를 구현합니다:
 
 | 테스트 파일 | 테스트 케이스 |
 |-------------|---------------|

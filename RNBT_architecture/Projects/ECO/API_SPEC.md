@@ -153,7 +153,7 @@ GET /api/hierarchy?depth={n}&locale={locale}
 | 파라미터 | 타입 | 기본값 | 설명 |
 |----------|------|--------|------|
 | depth | number | 2 | 반환할 트리 깊이 (1: 루트만, 2: 루트+1레벨, ...) |
-| locale | string | "ko" | 다국어 코드 (`ko`, `en`, `ja`) - [I18N_SPEC.md](I18N_SPEC.md) 참조 |
+| locale | string | "ko" | 다국어 코드 (`ko`, `en`, `ja`) - [I18N_SPEC.md](/RNBT_architecture/Projects/ECO/I18N_SPEC.md) 참조 |
 
 ### Response
 

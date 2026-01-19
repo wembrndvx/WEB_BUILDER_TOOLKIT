@@ -40,13 +40,13 @@ This file provides guidance to Claude Code when working in this repository.
 
 ### Figma_Conversion
 
-- **작업 지침**: `Figma_Conversion/CLAUDE.md`
-- **컴포넌트 구조**: `Figma_Conversion/PUBLISHING_COMPONENT_STRUCTURE.md`
+- **작업 지침**: `/Figma_Conversion/CLAUDE.md`
+- **컴포넌트 구조**: `/Figma_Conversion/PUBLISHING_COMPONENT_STRUCTURE.md`
 
 ### RNBT_architecture
 
-- **작업 지침**: `RNBT_architecture/CLAUDE.md`
-- **설계 문서**: `RNBT_architecture/README.md`
+- **작업 지침**: `/RNBT_architecture/CLAUDE.md`
+- **설계 문서**: `/RNBT_architecture/README.md`
 
 ---
 

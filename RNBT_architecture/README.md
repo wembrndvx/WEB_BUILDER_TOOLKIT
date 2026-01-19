@@ -5,17 +5,15 @@
 - [Q. RENOBIT의 역할은 무엇인가요?](#q-renobit의-역할은-무엇인가요)
 - [컴포넌트는 무엇인가요?](#컴포넌트는-무엇인가요)
 - [Q. 페이지와 컴포넌트의 역할이 정해져 있나요?](#q-페이지와-컴포넌트의-역할이-정해져-있나요)
+  - [핵심 원칙](#핵심-원칙)
+  - [완전한 라이프사이클 흐름](#완전한-라이프사이클-흐름)
 - [Q. 컴포넌트를 배치하긴 했는데, 어디서부터 어떻게 작업해야 하는지 모르겠어요.](#q-컴포넌트를-배치하긴-했는데-어디서부터-어떻게-작업해야-하는지-모르겠어요)
 - [컴포넌트 소스 레벨 라이프사이클](#컴포넌트-소스-레벨-라이프사이클)
 - [프로젝트 설계 템플릿](#프로젝트-설계-템플릿)
-- [컴포넌트 라이프사이클 패턴](#컴포넌트-라이프사이클-패턴)
-- [고급 패턴](#고급-패턴)
   - [Param 관리](#param-관리)
   - [Interval 관리](#interval-관리)
-  - [동적 Param 변경 패턴](#동적-param-변경-패턴)
   - [YAGNI 원칙](#yagni-원칙)
-- [완전한 라이프사이클 흐름](#완전한-라이프사이클-흐름)
-- [핵심 원칙](#핵심-원칙)
+- [컴포넌트 라이프사이클 패턴](#컴포넌트-라이프사이클-패턴)
 - [Default JS 템플릿](#default-js-템플릿)
 - [fx.go 기반 에러 핸들링 가이드](#fxgo-기반-에러-핸들링-가이드)
 - [Component Structure Guide](#component-structure-guide)
@@ -40,6 +38,57 @@ RENOBIT에서 컴포넌트는 클래스다. 클래스는 data와 data를 다루�
 페이지는 컨트롤러로서 컴포넌트를 운영한다.
 
 컴포넌트는 수동적이며, 자신의 콘텐츠를 가지고 있다.
+
+### 핵심 원칙
+
+**페이지 = 오케스트레이터**
+- 데이터 정의 (globalDataMappings)
+- Interval 관리 (refreshIntervals)
+- Param 관리 (currentParams)
+
+**컴포넌트 = 독립적 구독자**
+- 필요한 topic만 구독
+- 데이터 렌더링만 집중
+- 페이지의 내부 구조 몰라도 됨
+
+**Topic 기반 pub-sub**
+- 중복 fetch 방지
+- 여러 컴포넌트 공유 가능
+- 느슨한 결합
+
+### 완전한 라이프사이클 흐름
+
+```
+[페이지 로드]
+  MASTER before_load → PAGE before_load
+    → 이벤트 핸들러 등록 (onEventBusHandlers)
+    ↓
+  컴포넌트 register (MASTER + PAGE 모두)
+    → GlobalDataPublisher.subscribe() (구독 등록)
+    ↓
+  리소스 로딩 → 컴포넌트 completed
+    ↓
+  PAGE loaded → MASTER loaded
+    → 데이터셋 정의 (globalDataMappings)
+    → currentParams 초기화
+    → GlobalDataPublisher.registerMapping()
+    → 최초 데이터 발행 (fetchAndPublish)
+    → Interval 시작 (startAllIntervals)
+
+[User Interaction]
+  → DOM Event → Weventbus.emit() → Page EventBus Handler
+  → currentParams 업데이트 → 즉시 fetchAndPublish
+
+[페이지 언로드]
+  MASTER before_unload → PAGE before_unload
+    → stopAllIntervals()
+    → offEventBusHandlers()
+    → unregisterMapping()
+    ↓
+  컴포넌트 beforeDestroy (MASTER + PAGE 모두)
+```
+
+> 같은 마스터를 사용하는 페이지 간 전환 시, 마스터 스크립트는 스킵됩니다.
 
 ---
 
@@ -79,7 +128,7 @@ RENOBIT에서 컴포넌트는 클래스다. 클래스는 data와 data를 다루�
 
 컴포넌트는 소스에서도 라이프사이클을 가지고 있다. (컴포넌트 커스텀 제작 시 중요)
 
-참조: [Utils/ComponentMixin.js](Utils/ComponentMixin.js)
+참조: [Utils/ComponentMixin.js](/RNBT_architecture/Utils/ComponentMixin.js)
 
 ### 뷰어 전용 라이프사이클 훅 (2D/3D 공통)
 
@@ -149,228 +198,38 @@ class MyChart extends WVDOMComponent {
 
 ## 프로젝트 설계 템플릿
 
+페이지 라이프사이클의 논리적 설계 의도를 설명합니다.
+
+> **코드 템플릿**: [Default JS 템플릿](#default-js-템플릿) 참조
+
 ### 페이지 라이프사이클 구현
 
-#### page_before_load.js
+| 파일 | 역할 | 핵심 논리 |
+|------|------|----------|
+| `page_before_load.js` | 컴포넌트 생성 전 초기 설정 | 이벤트 핸들러 등록 영역 제공 |
+| `page_loaded.js` | 데이터 발행 및 갱신 관리 | 데이터마다 독립적인 interval 관리 |
+| `page_before_unload.js` | 모든 리소스 정리 | 생성된 리소스 1:1 매칭 정리 |
 
-**역할:** 컴포넌트 생성 전 초기 설정
+### 설계 원칙
 
-**핵심 논리:**
-- 컴포넌트는 독립적이고, 페이지에서 정의할 이벤트도 사용자 정의입니다
-- 이벤트가 정의될 영역을 빈 구조로 제공하고, 샘플로 패턴을 명시합니다
+1. **이벤트 정의**: 빈 구조 제공 → 샘플로 패턴 명시 → 선택적 기능은 주석 처리
+2. **데이터 갱신**: `refreshInterval` 있으면 주기적 갱신, 없으면 한 번만 fetch
+3. **정리 순서**: Interval 중단 → EventBus 정리 → DataPublisher 정리 → Three.js 정리
 
-**구현 특징:**
-- 빈 구조 제공 (`this.eventBusHandlers = {}`)
-- 샘플 하나로 패턴 명시
-- Primitive 조합 방식 표현
-- 선택적 기능은 주석 처리
-
-**코드 예시:**
-
-```javascript
-const { onEventBusHandlers, fetchData } = Wkit;
-
-this.eventBusHandlers = {
-    // 샘플: Primitive 조합 패턴
-    '@itemClicked': async ({ event, targetInstance }) => {
-        const { datasetInfo } = targetInstance;
-        if (datasetInfo?.length) {
-            for (const { datasetName, param } of datasetInfo) {
-                const data = await fetchData(this, datasetName, param);
-                // TODO: 데이터 처리
-            }
-        }
-    },
-
-    // Param 업데이트 패턴
-    '@filterChanged': ({ event }) => {
-        const filter = event.target.value;
-        this.currentParams['myTopic'] = {
-            ...this.currentParams['myTopic'],
-            filter
-        };
-        GlobalDataPublisher.fetchAndPublish('myTopic', this, this.currentParams['myTopic']);
-    }
-};
-
-onEventBusHandlers(this.eventBusHandlers);
-```
-
-#### page_loaded.js
-
-**역할:** 모든 컴포넌트 completed 후 데이터 발행 및 갱신 관리
-
-**핵심 논리:**
-- 페이지는 컴포넌트가 공유할 데이터를 속성으로 정의하고, 구독자들에게 데이터를 전달합니다
-- 데이터마다 갱신 주기가 다를 수 있으므로 독립적인 interval을 관리합니다
-
-**데이터 매핑 정의:**
-
-```javascript
-this.globalDataMappings = [
-    {
-        topic: 'topicA',
-        datasetInfo: {
-            datasetName: 'myapi',
-            param: { endpoint: '/api/data-a' }
-        },
-        refreshInterval: 5000  // 5초 주기
-    },
-    {
-        topic: 'topicB',
-        datasetInfo: {
-            datasetName: 'myapi',
-            param: { endpoint: '/api/data-b' }
-        },
-        refreshInterval: 30000  // 30초 주기
-    }
-];
-```
-
-- `refreshInterval` 있으면: 주기적 갱신
-- `refreshInterval` 없으면: 한 번만 fetch
-
-**Param 관리 / Interval 관리:**
-
-> 상세 내용은 [고급 패턴](#고급-패턴) 섹션 참조
-
-```javascript
-// 초기화 흐름
-this.currentParams = {};
-
-fx.go(
-    this.globalDataMappings,
-    each(GlobalDataPublisher.registerMapping),           // 1. Register
-    each(({ topic }) => this.currentParams[topic] = {}), // 2. Init params
-    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this)) // 3. Fetch
-);
-
-this.startAllIntervals();
-```
-
-#### page_before_unload.js
-
-**역할:** 페이지 종료 시 모든 리소스 정리
-
-**핵심 논리:** 생성된 모든 리소스는 1:1 매칭으로 정리되어야 합니다.
-
-**정리 순서:**
-
-```javascript
-function onPageUnLoad() {
-    stopAllIntervals.call(this);        // 1. Interval 먼저 중단
-    clearEventBus.call(this);           // 2. EventBus 정리
-    clearDataPublisher.call(this);      // 3. DataPublisher 정리
-    clearThree.call(this);              // 4. Three.js 정리 (선택)
-}
-```
-
-**생성/정리 매칭 테이블:**
+### 페이지 생성/정리 매칭
 
 | 생성 (before_load / loaded) | 정리 (before_unload) |
 |-----------------------------|----------------------|
 | `this.eventBusHandlers = {...}` | `this.eventBusHandlers = null` |
-| `onEventBusHandlers(...)` | `offEventBusHandlers(...)` |
+| `onEventBusHandlers(handlers)` | `offEventBusHandlers(handlers)` |
 | `this.globalDataMappings = [...]` | `this.globalDataMappings = null` |
+| `registerMapping(mapping)` | `unregisterMapping(topic)` |
 | `this.currentParams = {}` | `this.currentParams = null` |
+| `this.startAllIntervals()` | `this.stopAllIntervals()` |
 | `this.refreshIntervals = {}` | `this.refreshIntervals = null` |
-| `GlobalDataPublisher.registerMapping(...)` | `GlobalDataPublisher.unregisterMapping(...)` |
-| `setInterval(...)` | `clearInterval(...)` |
-
----
-
-## 컴포넌트 라이프사이클 패턴
-
-컴포넌트는 register와 beforeDestroy 두 개의 라이프사이클 단계를 활용합니다.
-
-### Register 패턴
-
-#### 패턴 1: 2D 이벤트 바인딩
-
-```javascript
-const { bindEvents } = Wkit;
-
-this.customEvents = {
-    click: {
-        '.my-button': '@buttonClicked',
-        '.my-link': '@linkClicked'
-    }
-};
-
-bindEvents(this, this.customEvents);
-```
-
-**핵심 포인트:**
-- 이벤트 위임 패턴: 동적으로 생성되는 요소도 처리 가능
-- `@` 접두사: 커스텀 이벤트 구분
-- 컴포넌트 독립성: 컴포넌트는 이벤트 발행만, 처리는 페이지가 담당
-
-#### 패턴 2: GlobalDataPublisher 구독
-
-```javascript
-const { subscribe } = GlobalDataPublisher;
-const { each } = fx;
-
-this.subscriptions = {
-    topicA: ['renderTable', 'updateCount'],  // 한 topic에 여러 메서드
-    topicB: ['renderList']
-};
-
-this.renderTable = renderTable.bind(this);
-this.updateCount = updateCount.bind(this);
-this.renderList = renderList.bind(this);
-
-fx.go(
-    Object.entries(this.subscriptions),
-    each(([topic, fnList]) =>
-        each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
-    )
-);
-
-function renderTable({ response }) {
-    const { data } = response;
-    if (!data) return;
-    console.log(`[Render Table] ${this.name}`, data);
-    // 렌더링 로직
-}
-```
-
-### beforeDestroy 패턴
-
-```javascript
-const { removeCustomEvents } = Wkit;
-const { unsubscribe } = GlobalDataPublisher;
-const { each } = fx;
-
-// 1. 이벤트 제거
-removeCustomEvents(this, this.customEvents);
-this.customEvents = null;
-
-// 2. 구독 해제
-fx.go(
-    Object.entries(this.subscriptions),
-    each(([topic, _]) => unsubscribe(topic, this))
-);
-this.subscriptions = null;
-
-// 3. 모든 핸들러 참조 제거
-this.renderTable = null;
-this.updateCount = null;
-```
-
-**생성/정리 매칭 (컴포넌트):**
-
-| 생성 (register) | 정리 (beforeDestroy) |
-|-----------------|----------------------|
-| `this.customEvents = {...}` | `this.customEvents = null` |
-| `bindEvents(this, customEvents)` | `removeCustomEvents(this, customEvents)` |
-| `this.subscriptions = {...}` | `this.subscriptions = null` |
-| `subscribe(topic, this, handler)` | `unsubscribe(topic, this)` |
-| `this.myMethod = myMethod.bind(this)` | `this.myMethod = null` |
-
----
-
-## 고급 패턴
+| `initThreeRaycasting(canvas, type)` | `canvas.removeEventListener(type, handler)` |
+| `this.raycastingEvents = [...]` | `this.raycastingEvents = null` |
+| *(3D 컴포넌트 존재 시)* | `disposeAllThreeResources(this)` |
 
 ### Param 관리
 
@@ -395,6 +254,27 @@ fx.go(
 | 관리 주체 | 페이지 (데이터셋 정보를 소유하므로) |
 | 관리 구조 | `this.currentParams[topic]` |
 | 사용 | `fetchAndPublish(topic, this, this.currentParams[topic])` |
+
+#### 동적 Param 변경
+
+**핵심: Stop/Start 불필요!** `currentParams`는 참조(Reference)이므로 interval이 자동으로 업데이트된 param을 사용합니다.
+
+```javascript
+'@filterChanged': ({ event }) => {
+    const filter = event.target.value;
+
+    // 1. Update currentParams
+    this.currentParams['myTopic'] = {
+        ...this.currentParams['myTopic'],
+        filter
+    };
+
+    // 2. Immediate fetch - 사용자가 즉시 새 데이터 봄
+    GlobalDataPublisher.fetchAndPublish('myTopic', this, this.currentParams['myTopic']);
+
+    // 3. Interval은 자동으로 업데이트된 param 사용
+}
+```
 
 ### Interval 관리
 
@@ -432,48 +312,6 @@ this.stopAllIntervals = () => {
 this.startAllIntervals();
 ```
 
-### 동적 Param 변경 패턴
-
-**핵심 발견: Stop/Start 불필요!**
-
-`currentParams`는 **참조(Reference)**입니다.
-
-```javascript
-// Interval 설정 시
-setInterval(() => {
-    GlobalDataPublisher.fetchAndPublish(
-        topic,
-        this,
-        this.currentParams[topic]  // ← 참조!
-    );
-}, refreshInterval);
-```
-
-**패턴:**
-
-```javascript
-'@filterChanged': ({ event }) => {
-    const filter = event.target.value;
-
-    // 1. Update currentParams
-    this.currentParams['myTopic'] = {
-        ...this.currentParams['myTopic'],
-        filter
-    };
-
-    // 2. Immediate fetch - 사용자가 즉시 새 데이터 봄
-    GlobalDataPublisher.fetchAndPublish('myTopic', this, this.currentParams['myTopic']);
-
-    // 3. Interval은 자동으로 업데이트된 param 사용
-    // No stop/start needed!
-}
-```
-
-**장점:**
-- 독립적 주기 유지
-- 즉시 반영
-- 자동 업데이트
-
 ### YAGNI 원칙
 
 "필요할 때 추가하라. 미리 추가하지 마라."
@@ -486,75 +324,36 @@ setInterval(() => {
 
 ---
 
-## 완전한 라이프사이클 흐름
+## 컴포넌트 라이프사이클 패턴
 
-```
-[Page - before_load]
-  → 이벤트 핸들러 등록 (onEventBusHandlers)
-  → 이벤트 준비 완료
+컴포넌트는 register와 beforeDestroy 두 개의 라이프사이클 단계를 활용합니다.
 
-[Component - register]
-  → GlobalDataPublisher.subscribe() (구독 등록)
-  → 데이터 수신 준비 완료
+> **코드 템플릿**: [Default JS 템플릿](#default-js-템플릿) 참조
 
-[Page - loaded]
-  → 데이터셋 정의 (globalDataMappings)
-  → currentParams 초기화
-  → GlobalDataPublisher.registerMapping()
-  → 최초 데이터 발행 (fetchAndPublish)
-  → Interval 시작 (startAllIntervals)
-  → 구독자들에게 데이터 자동 전파
+### Register 패턴
 
-[User Interaction]
-  → DOM Event
-  → Weventbus.emit()
-  → Page EventBus Handler
-  → currentParams 업데이트
-  → 즉시 fetchAndPublish
-  → 다음 interval에서 자동으로 새 param 사용
+| 패턴 | 용도 | 핵심 포인트 |
+|------|------|------------|
+| 2D 이벤트 바인딩 | DOM 이벤트 → Weventbus | 이벤트 위임, `@` 접두사, 컴포넌트는 발행만 |
+| GlobalDataPublisher 구독 | 데이터 수신 → 렌더링 | topic별 메서드 매핑, `{ response }` 구조 |
 
-[Page - before_unload]
-  → stopAllIntervals()
-  → offEventBusHandlers()
-  → unregisterMapping()
-  → 모든 참조 제거
-```
+### beforeDestroy 패턴
 
----
+정리 순서: 이벤트 제거 → 구독 해제 → 핸들러 참조 제거
 
-## 핵심 원칙
-
-### 페이지 = 오케스트레이터
-
-- 데이터 정의 (globalDataMappings)
-- Interval 관리 (refreshIntervals)
-- Param 관리 (currentParams)
-
-### 컴포넌트 = 독립적 구독자
-
-- 필요한 topic만 구독
-- 데이터 렌더링만 집중
-- 페이지의 내부 구조 몰라도 됨
-
-### Topic 기반 pub-sub
-
-- 중복 fetch 방지
-- 여러 컴포넌트 공유 가능
-- 느슨한 결합
-
-### event vs targetInstance
-
-사용자 이벤트 발생 시 두 가지 정보가 제공됩니다:
-
-| 정보 타입 | event.target | targetInstance |
-|-----------|--------------|----------------|
-| 사용자 입력 | value, textContent | |
-| DOM 속성 | dataset, classList | |
-| 인스턴스 메타 | | id, name |
-| 데이터셋 정보 | | datasetInfo |
-| 인스턴스 메소드 | | showDetail(), etc. |
-
-> 상호보완적: 두 가지가 서로 다른 정보를 제공하여 완전한 컨텍스트 구성
+| 생성 (register) | 정리 (beforeDestroy) |
+|-----------------|----------------------|
+| `this.subscriptions = {...}` | `this.subscriptions = null` |
+| `subscribe(topic, this, handler)` | `unsubscribe(topic, this)` |
+| `this.customEvents = {...}` | `this.customEvents = null` |
+| `bindEvents(this, customEvents)` | `removeCustomEvents(this, customEvents)` |
+| `this._internalHandlers = {...}` | `this._internalHandlers = null` |
+| `addEventListener(...)` | `removeEventListener(...)` |
+| `this.renderData = fn.bind(this)` | `this.renderData = null` |
+| `this._state = value` | `this._state = null` |
+| `createPopup(this, config)` | `destroyPopup(this)` |
+| `this.eventBusHandlers = {...}` | `this.eventBusHandlers = null` |
+| `onEventBusHandlers(handlers)` | `offEventBusHandlers(handlers)` |
 
 ---
 
@@ -584,7 +383,7 @@ Default JS 적용 ← 이 문서
 ```javascript
 const { subscribe } = GlobalDataPublisher;
 const { bindEvents } = Wkit;
-const { each } = fx;
+const { each, go } = fx;
 
 // ======================
 // SUBSCRIPTIONS
@@ -597,7 +396,7 @@ this.subscriptions = {
 // 핸들러 바인딩
 // this.renderData = renderData.bind(this);
 
-fx.go(
+go(
     Object.entries(this.subscriptions),
     each(([topic, fnList]) =>
         each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
@@ -620,7 +419,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-// function renderData(response) {
+// function renderData({ response }) {
 //     const { data } = response;
 //     if (!data) return;
 //
@@ -633,13 +432,13 @@ bindEvents(this, this.customEvents);
 ```javascript
 const { unsubscribe } = GlobalDataPublisher;
 const { removeCustomEvents } = Wkit;
-const { each } = fx;
+const { each, go } = fx;
 
 // ======================
 // SUBSCRIPTION CLEANUP
 // ======================
 
-fx.go(
+go(
     Object.entries(this.subscriptions),
     each(([topic, _]) => unsubscribe(topic, this))
 );
@@ -659,7 +458,7 @@ this.customEvents = null;
 // this.renderData = null;
 ```
 
-### 2. 3D 컴포넌트 Default JS
+### 2. 3D 컴포넌트 Default JS ( 컴포넌트 Default JS를 기반으로 )
 
 #### register.js
 
@@ -675,7 +474,7 @@ this.customEvents = {
     // mousemove: '@3dObjectHovered'
 };
 
-// Data source info (상호작용 시 데이터 필요한 경우)
+// Data source info (상호작용 시 데이터 필요한 경우, 즉 옵션 항목)
 // 배열 형태로 정의 (다중 데이터셋 지원)
 this.datasetInfo = [
     {
@@ -738,7 +537,8 @@ onEventBusHandlers(this.eventBusHandlers);
 #### loaded.js
 
 ```javascript
-const { each } = fx;
+const { registerMapping, fetchAndPublish } = GlobalDataPublisher;
+const { each, go } = fx;
 
 // ======================
 // DATA MAPPINGS
@@ -761,12 +561,12 @@ this.globalDataMappings = [
 
 this.currentParams = {};
 
-fx.go(
+go(
     this.globalDataMappings,
-    each(GlobalDataPublisher.registerMapping),
+    each(registerMapping),
     each(({ topic }) => this.currentParams[topic] = {}),
     each(({ topic }) =>
-        GlobalDataPublisher.fetchAndPublish(topic, this)
+        fetchAndPublish(topic, this)
             .catch(err => console.error(`[fetchAndPublish:${topic}]`, err))
     )
 );
@@ -778,12 +578,12 @@ fx.go(
 this.startAllIntervals = () => {
     this.refreshIntervals = {};
 
-    fx.go(
+    go(
         this.globalDataMappings,
         each(({ topic, refreshInterval }) => {
             if (refreshInterval) {
                 this.refreshIntervals[topic] = setInterval(() => {
-                    GlobalDataPublisher.fetchAndPublish(
+                    fetchAndPublish(
                         topic,
                         this,
                         this.currentParams[topic] || {}
@@ -795,7 +595,7 @@ this.startAllIntervals = () => {
 };
 
 this.stopAllIntervals = () => {
-    fx.go(
+    go(
         Object.values(this.refreshIntervals || {}),
         each(interval => clearInterval(interval))
     );
@@ -807,8 +607,9 @@ this.startAllIntervals();
 #### before_unload.js
 
 ```javascript
+const { unregisterMapping } = GlobalDataPublisher;
 const { offEventBusHandlers } = Wkit;
-const { each } = fx;
+const { each, go } = fx;
 
 // ======================
 // EVENT BUS CLEANUP
@@ -821,9 +622,9 @@ this.eventBusHandlers = null;
 // DATA PUBLISHER CLEANUP
 // ======================
 
-fx.go(
+go(
     this.globalDataMappings,
-    each(({ topic }) => GlobalDataPublisher.unregisterMapping(topic))
+    each(({ topic }) => unregisterMapping(topic))
 );
 
 this.globalDataMappings = null;
@@ -839,7 +640,7 @@ if (this.stopAllIntervals) {
 this.refreshIntervals = null;
 ```
 
-### 4. 페이지 3D Default JS (추가 섹션)
+### 4. 페이지 3D Default JS ( 페이지 Default JS를 기반으로 )
 
 3D 컴포넌트가 있는 페이지는 위 페이지 Default JS에 아래 내용을 추가합니다.
 
@@ -897,7 +698,7 @@ this.raycastingEvents = withSelector(this.appendElement, 'canvas', canvas =>
 
 ```javascript
 const { disposeAllThreeResources } = Wkit;
-const { each } = fx;
+const { each, go } = fx;
 
 // ... 기존 cleanup 코드 ...
 
@@ -909,7 +710,7 @@ const { withSelector } = Wkit;
 
 withSelector(this.appendElement, 'canvas', canvas => {
     if (this.raycastingEvents) {
-        fx.go(
+        go(
             this.raycastingEvents,
             each(({ type, handler }) => canvas.removeEventListener(type, handler))
         );
@@ -1137,7 +938,7 @@ run();
 
 ### 추가 자료
 
-**[docs/fail_fast_safe_error.md](docs/fail_fast_safe_error.md)** - Fail-fast vs Fail-safe 에러 전략 상세 가이드
+**[docs/fail_fast_safe_error.md](/RNBT_architecture/docs/fail_fast_safe_error.md)** - Fail-fast vs Fail-safe 에러 전략 상세 가이드
 
 이 문서는 **"언제 Fail-fast를 쓰고, 언제 Fail-safe(격리)를 써야 하는가"**에 대한 판단 기준과 구체적인 패턴을 제공합니다.
 
@@ -1503,511 +1304,75 @@ onEventBusHandlers(this.eventBusHandlers);
 
 ## 부록 C: 컴포넌트 내부 이벤트 패턴
 
-### 설계 철학 맥락
+### 핵심 개념
 
-RNBT의 핵심 원칙은 **"컴포넌트는 수동적이며, 자신의 콘텐츠를 가지고 있다"** 입니다.
+"컴포넌트는 수동적이며, 자신의 콘텐츠를 가지고 있다"
+- "수동적" = 데이터 흐름과 비즈니스 로직 결정
+- "자신의 콘텐츠" = 컴포넌트가 자체 UI 상태를 관리할 수 있음
 
-여기서 "수동적"은 **데이터 흐름과 비즈니스 로직 결정**에 대한 것이며, "자신의 콘텐츠를 가지고 있다"는 **컴포넌트가 자체 UI 상태를 관리할 수 있음**을 의미합니다.
+### 내부 vs 외부 이벤트
 
-따라서 컴포넌트 내부의 UI 조작(버튼 토글, 목록 확장/축소 등)은 컴포넌트가 자율적으로 처리할 수 있으며, 이는 "수동적" 원칙과 충돌하지 않습니다.
+**판단 기준:** "이 동작의 결과를 페이지가 알아야 하는가?"
 
-### 내부 이벤트 vs 외부 이벤트
+| 답변 | 처리 방식 | 예시 |
+|------|----------|------|
+| No | `_internalHandlers` + `addEventListener` | 토글, 확장/축소 |
+| Yes | `customEvents` + `bindEvents()` | 행 선택, 필터 변경 |
+| 둘 다 | 둘 다 사용 | 클릭 → UI 변경 + 페이지 알림 |
 
-| 구분 | 내부 이벤트 | 외부 이벤트 |
-|------|------------|------------|
-| **목적** | 컴포넌트 자체 UI 상태 관리 | 페이지에 사용자 행동 알림 |
-| **핸들러 등록** | `setupInternalHandlers()` | `customEvents` + `bindEvents()` |
-| **핸들러 저장** | `this._internalHandlers` | `this.customEvents` |
-| **정리** | 명시적 `removeEventListener()` | `removeCustomEvents()` |
-| **판단 기준** | "이 동작의 결과를 페이지가 알아야 하는가?" → No | "이 동작의 결과를 페이지가 알아야 하는가?" → Yes |
-
-### 공존 가능성
-
-내부 이벤트와 외부 이벤트는 **공존이 가능**합니다. 같은 버튼이 두 가지 역할을 할 수 있습니다:
-
-```javascript
-// 외부: 페이지에 알림 (필요시)
-this.customEvents = {
-    click: {
-        '.btn-toggle': '@toggleClicked'  // 페이지가 이 정보를 필요로 할 때만
-    }
-};
-bindEvents(this, this.customEvents);
-
-// 내부: UI 상태 변경
-this._internalHandlers = {};
-
-function setupInternalHandlers() {
-    this._internalHandlers.toggleClick = () => {
-        this.isExpanded = !this.isExpanded;
-        this.updateUI();
-    };
-    this.appendElement.querySelector('.btn-toggle')?.addEventListener('click', this._internalHandlers.toggleClick);
-}
-setupInternalHandlers.call(this);
-```
+> **구현 예제:** [AssetList](/RNBT_architecture/Projects/ECO/page/components/AssetList/scripts/register.js)
 
 ---
 
 ## 부록 D: Configuration 설계 원칙
 
+> **상세 문서:** [WHY_CONFIG.md](/RNBT_architecture/docs/WHY_CONFIG.md) - Config가 왜 필요한지, Data와 Config의 차이
+
 ### Config의 본질
 
 Config는 **추상화된 구조에 다형성을 부여하기 위한 주입 옵션**이다.
 
-**핵심 질문:** "이 로직에서 미리 알 수 없는 부분은 무엇인가?"
+**핵심 질문:** "이 로직에서 미리 알 수 없는 부분은 무엇인가?" → 그 답이 config가 된다.
 
-그 답이 config가 된다.
-
-### 왜 Config가 필요한가
-
-**문제 상황:**
-
-팝업 템플릿에 센서 정보를 렌더링해야 한다고 가정하자.
-
-```javascript
-// 하드코딩된 접근
-function renderSensorInfo(data) {
-    this.popupQuery('.sensor-name').textContent = data.name;
-    this.popupQuery('.sensor-zone').textContent = data.zone;
-    this.popupQuery('.sensor-temp').textContent = data.temperature;
-}
-```
-
-이 코드는 특정 템플릿 구조를 전제한다. `.sensor-name`, `.sensor-zone`, `.sensor-temp`라는 선택자가 반드시 존재해야 한다.
-
-다른 템플릿을 사용하려면? 함수를 새로 작성해야 한다.
-
-**Config의 해결:**
-
-```javascript
-// Config 기반 접근
-const sensorInfoConfig = [
-    { key: 'name', selector: '.sensor-name' },
-    { key: 'zone', selector: '.sensor-zone' },
-    { key: 'temperature', selector: '.sensor-temp' }
-];
-
-function renderInfo(config, { response }) {
-    const { data } = response;
-    if (!data) return;
-    config.forEach(({ key, selector }) => {
-        this.popupQuery(selector).textContent = data[key];
-    });
-}
-```
-
-이제 `renderInfo`는 어떤 템플릿이든 처리할 수 있다. 템플릿이 달라지면 config만 바꾸면 된다.
-
-### Config의 경계: 무엇을 config로 빼야 하는가
-
-**판단 기준:**
+### Config 대상 판단
 
 | 질문 | Yes → Config | No → 하드코딩 |
 |------|--------------|---------------|
-| 이 값이 템플릿/컨텍스트마다 달라지는가? | ✓ | |
-| 이 값을 미리 알 수 없는가? | ✓ | |
-| 이 값이 비즈니스 요구에 따라 변경될 가능성이 있는가? | ✓ | |
+| 템플릿/컨텍스트마다 달라지는가? | ✓ | |
+| 미리 알 수 없는가? | ✓ | |
+| 비즈니스 요구에 따라 변경될 가능성? | ✓ | |
 
-**경계의 예시:**
+**Config 대상:**
+- DOM 선택자, 데이터 필드 매핑, 차트 시리즈 정의
 
-Config로 빼야 하는 것:
-- DOM 선택자 (템플릿 구조에 의존)
-- 데이터 필드 매핑 (API 응답 구조에 의존)
-- 스타일 값 (디자인 요구사항에 의존)
-- 차트 시리즈 정의 (데이터 종류에 의존)
+**하드코딩 대상:**
+- 렌더링 로직 자체, 라이브러리 호출 방식, 이벤트 바인딩 메커니즘
 
-하드코딩해도 되는 것:
-- 렌더링 로직 자체 (config를 순회하며 값을 삽입하는 방식)
-- 차트 라이브러리 호출 방식 (echarts.setOption의 구조)
-- 이벤트 바인딩 메커니즘 (델리게이션 패턴)
+### 핵심 패턴
 
-### 실제 적용 패턴
-
-**패턴 1: 정보 렌더링 Config**
-
-문제: 팝업 템플릿의 구조를 렌더링 함수가 미리 알 수 없다.
-
-해결: 선택자와 데이터 키의 매핑을 config로 분리한다.
-
-```javascript
-// Config 정의
-this.baseInfoConfig = [
-    { key: 'name', selector: '.asset-name' },
-    { key: 'zone', selector: '.asset-zone' },
-    { key: 'status', selector: '.asset-status', dataAttr: 'status' }
-];
-
-this.sensorInfoConfig = [
-    { key: 'temperature', selector: '.sensor-temp' },
-    { key: 'humidity', selector: '.sensor-humidity' }
-];
-
-// 렌더링 함수 - 템플릿 구조를 모름
-function renderInfo(config, { response }) {
-    const { data } = response;
-    if (!data) return;
-    fx.go(
-        config,
-        fx.each(({ key, selector, dataAttr }) => {
-            const el = this.popupQuery(selector);
-            if (!el) return;
-            el.textContent = data[key];
-            if (dataAttr) el.dataset[dataAttr] = data[key];
-        })
-    );
-}
-
-// 사용: config를 바인딩하여 특화된 함수 생성
-this.renderSensorInfo = renderInfo.bind(this, [
-    ...this.baseInfoConfig,
-    ...this.sensorInfoConfig
-]);
-```
-
-| 필드 | 역할 | 왜 config인가 |
-|------|------|---------------|
-| key | API 응답에서 추출할 필드명 | API 구조가 컴포넌트마다 다름 |
-| selector | DOM에서 찾을 선택자 | 템플릿 구조가 컴포넌트마다 다름 |
-| dataAttr | data-* 속성으로 설정할 값 | CSS 선택자 활용 여부가 다름 |
-
-**패턴 2: 차트 Config**
-
-문제: 차트의 데이터 구조와 시각적 표현이 컴포넌트마다 다르다.
-
-해결: 데이터 매핑과 스타일을 config로, 차트 옵션 생성 로직은 별도 함수로 분리한다.
-
-```javascript
-// Config 정의
-this.chartConfig = {
-    xKey: 'timestamps',
-    series: [
-        { yKey: 'temperatures', color: '#3b82f6', smooth: true, areaStyle: true },
-        { yKey: 'humidity', color: '#10b981', smooth: true }
-    ],
-    optionBuilder: getLineChartOption
-};
-
-// 옵션 빌더 - 차트 타입별로 존재
-function getLineChartOption(config, data) {
-    const { xKey, series } = config;
-    return {
-        xAxis: { data: data[xKey] },
-        series: series.map(({ yKey, color, smooth, areaStyle }) => ({
-            type: 'line',
-            data: data[yKey],
-            lineStyle: { color },
-            smooth: smooth ?? false,
-            areaStyle: areaStyle ? { opacity: 0.3 } : undefined
-        }))
-    };
-}
-
-// 렌더링 함수
-function renderChart(config, { response }) {
-    const { data } = response;
-    if (!data) return;
-    const { optionBuilder, ...chartConfig } = config;
-    const option = optionBuilder(chartConfig, data);
-    this.updateChart('.chart-container', option);
-}
-
-// 사용
-this.renderChart = renderChart.bind(this, this.chartConfig);
-```
-
-| 필드 | 역할 | 왜 config인가 |
-|------|------|---------------|
-| xKey | X축 데이터 필드명 | API 응답 구조가 다름 |
-| series[].yKey | Y축 데이터 필드명 | 표시할 데이터가 다름 |
-| series[].color | 선/영역 색상 | 디자인 요구사항이 다름 |
-| optionBuilder | 차트 옵션 생성 함수 | 차트 타입(line/bar/pie)이 다름 |
-
-**패턴 3: 테이블 Config**
-
-문제: 테이블의 컬럼 구조와 포매터가 컴포넌트마다 다르다.
-
-해결: Tabulator 컬럼 정의를 config로 분리한다.
-
-```javascript
-// Config 정의
-this.tableConfig = {
-    selector: '.table-container',
-    columns: [
-        { title: 'PID', field: 'pid', widthGrow: 1, hozAlign: 'right' },
-        { title: 'Name', field: 'name', widthGrow: 2 },
-        {
-            title: 'CPU',
-            field: 'cpu',
-            widthGrow: 1,
-            hozAlign: 'right',
-            formatter: (cell) => {
-                const value = cell.getValue();
-                const color = value > 25 ? '#ef4444' : value > 15 ? '#eab308' : '#22c55e';
-                return `<span style="color: ${color}">${value}%</span>`;
-            }
-        }
-    ],
-    optionBuilder: getTableOption
-};
-
-// 옵션 빌더
-function getTableOption(config, data) {
-    return {
-        layout: 'fitColumns',
-        height: 250,
-        initialSort: [{ column: 'cpu', dir: 'desc' }],
-        columns: config.columns
-    };
-}
-
-// 렌더링 함수
-function renderProcessTable(config, data) {
-    const { optionBuilder } = config;
-    const option = optionBuilder(config, data.processes);
-    this.updateTable('.table-container', data.processes, option);
-}
-```
-
-**패턴 4: 이벤트 Config**
-
-문제: 팝업 내 이벤트 핸들러의 선택자와 동작이 컴포넌트마다 다르다.
-
-해결: 이벤트 타입, 선택자, 핸들러의 매핑을 config로 분리한다.
-
-```javascript
-// Config 정의
-this.popupCreatedConfig = {
-    chartSelector: '.chart-container',
-    tableSelector: '.table-container',
-    events: {
-        click: {
-            '.close-btn': () => this.hideDetail(),
-            '.refresh-btn': () => this.refresh(),
-            '.tab-btn': (e) => this._switchTab(e.target.dataset.tab)
-        }
-    }
-};
-
-// 팝업 생성 시 config 적용
-function onPopupCreated({ chartSelector, tableSelector, events }) {
-    chartSelector && this.createChart(chartSelector);
-    tableSelector && this.createTable(tableSelector);
-    events && this.bindPopupEvents(events);
-}
-```
-
-### Config 설계 시 주의점
-
-**1. 과도한 config는 복잡성을 증가시킨다**
-
-```javascript
-// 과도한 config - 모든 것을 config로
-const config = {
-    containerSelector: '.popup',
-    titleSelector: '.title',
-    titleTag: 'h2',
-    titleClass: 'popup-title',
-    animationDuration: 300,
-    animationEasing: 'ease-in-out',
-    // ... 20개 더
-};
-```
-
-변경 가능성이 낮은 것까지 config로 빼면 오히려 사용이 어려워진다.
-
-**2. Config의 기본값을 제공하라**
-
-```javascript
-function renderChart(config, data) {
-    const {
-        xKey = 'x',
-        smooth = false,
-        optionBuilder = getLineChartOption
-    } = config;
-    // ...
-}
-```
-
-필수가 아닌 config에는 합리적인 기본값을 설정한다.
+| 패턴 | 고정 (재사용) | 가변 (컴포넌트별) |
+|------|--------------|------------------|
+| 정보 렌더링 | `renderInfo(config, { response })` | `infoConfig[]` |
+| 차트 | `renderChart(config, { response })` | `chartConfig` + `optionBuilder` |
+| 테이블 | `renderTable(config, { response })` | `tableConfig` (columns) |
 
 ### Config 핵심 요약
 
-- **Config의 목적:** 추상화된 로직에 다형성을 부여한다
-- **Config의 대상:** 미리 알 수 없고, 컨텍스트마다 달라지는 값
-- **Config의 경계:** 변경 가능성이 높은 것만 config로, 나머지는 하드코딩
-- **Config의 구조:** 명확한 역할 분리 (데이터 매핑, 선택자, 스타일, 동작)
+- **목적:** 추상화된 로직에 다형성 부여
+- **대상:** 미리 알 수 없고 컨텍스트마다 달라지는 값
+- **경계:** 변경 가능성 높은 것만 config, 나머지는 하드코딩
+- **주의:** 과도한 config는 복잡성 증가 → 기본값 제공
+
+> **구현 예제:**
+> - 정보 렌더링: [UPS](/RNBT_architecture/Projects/ECO/page/components/UPS/scripts/register.js)
+> - 차트 Config: [CRAC](/RNBT_architecture/Projects/ECO/page/components/CRAC/scripts/register.js)
+> - 테이블 Config: [PDU](/RNBT_architecture/Projects/ECO/page/components/PDU/scripts/register.js)
 
 ---
 
 ## 부록 E: PopupMixin 패턴
 
-### 왜 Mixin인가
+3D 컴포넌트에 Shadow DOM 팝업, 차트, 테이블 기능을 Mixin으로 조합하여 팝업을 사용한 패턴.
 
-**상속 vs 조합:**
-
-```javascript
-// 상속 방식 - 경직된 구조
-class PopupComponent extends BaseComponent { ... }
-class ChartPopupComponent extends PopupComponent { ... }
-class TablePopupComponent extends PopupComponent { ... }
-class ChartTablePopupComponent extends ??? { ... }  // 다중 상속 불가
-
-// Mixin 방식 - 유연한 조합
-applyShadowPopupMixin(this, options);  // 기본 팝업
-applyEChartsMixin(this);               // + 차트 기능
-applyTabulatorMixin(this);             // + 테이블 기능
-```
-
-Mixin은 **필요한 기능만 선택적으로 조합**할 수 있다.
-
-### PopupMixin 구조
-
-```
-PopupMixin
-├── applyShadowPopupMixin  - 기본 Shadow DOM 팝업
-├── applyEChartsMixin      - ECharts 차트 관리 (Popup 전용)
-└── applyTabulatorMixin    - Tabulator 테이블 관리 (Popup 전용)
-```
-
-**적용 순서:**
-
-```javascript
-// 1. 반드시 applyShadowPopupMixin 먼저
-applyShadowPopupMixin(this, {
-    getHTML: this.getPopupHTML,
-    getStyles: this.getPopupStyles,
-    onCreated: this.onPopupCreated
-});
-
-// 2. 필요한 Mixin 추가 (순서 무관)
-applyEChartsMixin(this);      // 차트 필요 시
-applyTabulatorMixin(this);    // 테이블 필요 시
-```
-
-### applyShadowPopupMixin
-
-기본 Shadow DOM 팝업 기능을 제공한다.
-
-**제공 메서드:**
-
-| 메서드 | 역할 |
-|--------|------|
-| `createPopup()` | Shadow DOM 팝업 생성 |
-| `showPopup()` | 팝업 표시 (없으면 생성) |
-| `hidePopup()` | 팝업 숨김 |
-| `popupQuery(selector)` | Shadow DOM 내부 요소 선택 |
-| `popupQueryAll(selector)` | Shadow DOM 내부 요소 모두 선택 |
-| `bindPopupEvents(events)` | 이벤트 델리게이션 바인딩 |
-| `destroyPopup()` | 팝업 및 리소스 정리 |
-
-**사용 예시:**
-
-```javascript
-applyShadowPopupMixin(this, {
-    getHTML: () => '<div class="popup">...</div>',
-    getStyles: () => '.popup { background: #1a1f2e; }',
-    onCreated: (shadowRoot) => {
-        // 팝업 생성 후 초기화 로직
-    }
-});
-```
-
-### applyEChartsMixin
-
-Shadow DOM 팝업 내에서 ECharts 차트를 관리한다.
-
-**제공 메서드:**
-
-| 메서드 | 역할 |
-|--------|------|
-| `createChart(selector)` | ECharts 인스턴스 생성 + ResizeObserver |
-| `getChart(selector)` | 인스턴스 조회 |
-| `updateChart(selector, option)` | setOption 호출 |
-
-**특징:**
-- `applyShadowPopupMixin` 이후 호출 필수
-- ResizeObserver로 컨테이너 크기 변경 자동 감지
-- `destroyPopup()` 호출 시 차트 자동 정리
-
-### applyTabulatorMixin
-
-Shadow DOM 팝업 내에서 Tabulator 테이블을 관리한다.
-
-**제공 메서드:**
-
-| 메서드 | 역할 |
-|--------|------|
-| `createTable(selector, options)` | Tabulator 인스턴스 생성 + ResizeObserver |
-| `getTable(selector)` | 인스턴스 조회 |
-| `updateTable(selector, data)` | setData 호출 |
-| `updateTableOptions(selector, options)` | 컬럼/데이터 업데이트 |
-| `isTableReady(selector)` | 테이블 초기화 완료 여부 확인 |
-
-**특징:**
-- `applyShadowPopupMixin` 이후 호출 필수
-- Shadow DOM에 Tabulator CSS 자동 주입 (midnight 테마)
-- ResizeObserver로 컨테이너 크기 변경 자동 감지
-- `destroyPopup()` 호출 시 테이블 자동 정리
-- `tableBuilt` 이벤트로 초기화 완료 추적 → `isTableReady()`로 확인 가능
-- height 옵션 미지정 시 CSS height 적용됨 (JS 옵션이 CSS보다 우선순위 높음)
-
-> **실제 적용 사례**: [ECO 프로젝트 PDU 컴포넌트](Projects/ECO/README.md#pdu-컴포넌트-구조) - 탭 UI + 테이블 + 차트 조합
-
-### destroyPopup 체이닝 패턴
-
-각 Mixin은 `destroyPopup`을 확장하여 자신의 리소스를 정리한다.
-
-```javascript
-// applyEChartsMixin 내부
-const originalDestroyPopup = instance.destroyPopup;
-instance.destroyPopup = function() {
-    // 차트 정리
-    fx.go(
-        [...instance._popup.charts.values()],
-        fx.each(({ chart, resizeObserver }) => {
-            resizeObserver.disconnect();
-            chart.dispose();
-        })
-    );
-    instance._popup.charts.clear();
-
-    // 원래 destroyPopup 호출
-    originalDestroyPopup.call(instance);
-};
-```
-
-**정리 순서 (역순):**
-
-```
-destroyPopup() 호출
-    ↓
-applyTabulatorMixin: 테이블 정리
-    ↓
-applyEChartsMixin: 차트 정리
-    ↓
-applyShadowPopupMixin: 이벤트 정리 + DOM 제거
-```
-
----
-
-### PopupMixin.js 전체 소스
-
-참조: [Utils/PopupMixin.js](Utils/PopupMixin.js)
-
-### 생성/정리 매칭 테이블 (전체)
-
-| 생성 (register) | 정리 (beforeDestroy) |
-|-----------------|----------------------|
-| `this.subscriptions = {...}` | `this.subscriptions = null` |
-| `subscribe(topic, this, handler)` | `unsubscribe(topic, this)` |
-| `this.customEvents = {...}` | `this.customEvents = null` |
-| `bindEvents(this, customEvents)` | `removeCustomEvents(this, customEvents)` |
-| `this._internalHandlers = {...}` | `this._internalHandlers = null` |
-| `addEventListener(...)` | `removeEventListener(...)` |
-| `this.renderData = fn.bind(this)` | `this.renderData = null` |
-| `this._state = value` | `this._state = null` |
-| `createPopup(this, config)` | `destroyPopup(this)` |
-| `this.eventBusHandlers = {...}` | `this.eventBusHandlers = null` |
-| `onEventBusHandlers(handlers)` | `offEventBusHandlers(handlers)` |
+> **참조:** [Utils/PopupMixin.js](/RNBT_architecture/Utils/PopupMixin.js), [Projects/ECO/page/components/UPS/](/RNBT_architecture/Projects/ECO/page/components/UPS/)
 

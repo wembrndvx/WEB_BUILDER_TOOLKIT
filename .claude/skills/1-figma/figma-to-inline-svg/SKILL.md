@@ -9,6 +9,19 @@ Figma 디자인을 **인라인 SVG가 포함된 정적 HTML/CSS**로 변환하�
 런타임에서 색상 제어가 필요한 심볼, 아이콘, 상태 표시 컴포넌트용입니다.
 스크립트 작업은 하지 않습니다 (순수 퍼블리싱).
 
+---
+
+## ⚠️ 작업 전 필수 확인
+
+**코드 작성 전 반드시 다음 파일들을 Read 도구로 읽으세요.**
+**이전에 읽었더라도 매번 다시 읽어야 합니다 - 캐싱하거나 생략하지 마세요.**
+
+1. `/Figma_Conversion/README.md` - 프로젝트 구조 및 시작 방법
+2. `/Figma_Conversion/CLAUDE.md` - 워크플로우와 규칙
+3. `/.claude/guides/CODING_STYLE.md` - 코딩 스타일
+
+---
+
 ## figma-to-html과의 차이점
 
 | 구분 | figma-to-html | figma-to-inline-svg |
@@ -140,7 +153,7 @@ Figma_Conversion/Static_Components/
 
 ### 3. CSS 원칙
 
-**[CODING_STYLE.md](../../../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
+**[CODING_STYLE.md](/.claude/guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
 
 핵심 요약:
 - **px 단위 사용** (rem/em 금지) - RNBT 런타임 호환성 보장
@@ -326,11 +339,11 @@ create-symbol-state-component (동적)
 
 | 문서 | 참고 시점 | 내용 |
 |------|----------|------|
-| [CODING_STYLE.md](../../../guides/CODING_STYLE.md) | 코드 작성 시 | CSS 원칙 |
-| [figma-to-html/SKILL.md](../figma-to-html/SKILL.md) | MCP 사용법 참고 시 | 기본 워크플로우 |
+| [CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) | 코드 작성 시 | CSS 원칙 |
+| [figma-to-html/SKILL.md](/.claude/skills/1-figma/figma-to-html/SKILL.md) | MCP 사용법 참고 시 | 기본 워크플로우 |
 
 ## 참고 예제
 
 | 예제 | 참고 시점 | 특징 |
 |------|----------|------|
-| `Figma_Conversion/Static_Components/Symbol_Test/3d-cube/` | 인라인 SVG 예제 | 3D 큐브 심볼 |
+| `/Figma_Conversion/Static_Components/Symbol_Test/symbol-1-198/` | 인라인 SVG 예제 | 3D 큐브 심볼 |

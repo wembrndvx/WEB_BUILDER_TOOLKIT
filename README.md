@@ -221,13 +221,13 @@ RNBT_architecture/Projects/[프로젝트명]/page/components/[컴포넌트명]/
 
 ### Figma_Conversion
 
-- **작업 지침**: [Figma_Conversion/CLAUDE.md](Figma_Conversion/CLAUDE.md)
-- **컴포넌트 구조**: [Figma_Conversion/PUBLISHING_COMPONENT_STRUCTURE.md](Figma_Conversion/PUBLISHING_COMPONENT_STRUCTURE.md)
+- **작업 지침**: [Figma_Conversion/CLAUDE.md](/Figma_Conversion/CLAUDE.md)
+- **컴포넌트 구조**: [Figma_Conversion/PUBLISHING_COMPONENT_STRUCTURE.md](/Figma_Conversion/PUBLISHING_COMPONENT_STRUCTURE.md)
 
 ### RNBT_architecture
 
-- **작업 지침**: [RNBT_architecture/CLAUDE.md](RNBT_architecture/CLAUDE.md)
-- **설계 문서**: [RNBT_architecture/README.md](RNBT_architecture/README.md)
+- **작업 지침**: [RNBT_architecture/CLAUDE.md](/RNBT_architecture/CLAUDE.md)
+- **설계 문서**: [RNBT_architecture/README.md](/RNBT_architecture/README.md)
 
 ---
 

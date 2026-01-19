@@ -382,11 +382,11 @@ PDU/
 
 ## 참고
 
-- [Shadow Popup Mixin](../../../Utils/Mixins/ShadowPopupMixin.js)
-- [Tabulator Mixin](../../../Utils/Mixins/TabulatorMixin.js)
-- [ECharts Mixin](../../../Utils/Mixins/EChartsMixin.js)
-- [API 명세](../../../API_SPEC.md)
-- [다국어 명세](../../../I18N_SPEC.md)
+- [Shadow Popup Mixin](/RNBT_architecture/Utils/Mixins/ShadowPopupMixin.js)
+- [Tabulator Mixin](/RNBT_architecture/Utils/Mixins/TabulatorMixin.js)
+- [ECharts Mixin](/RNBT_architecture/Utils/Mixins/EChartsMixin.js)
+- [API 명세](/RNBT_architecture/Projects/ECO/API_SPEC.md)
+- [다국어 명세](/RNBT_architecture/Projects/ECO/I18N_SPEC.md)
 
 ---
 

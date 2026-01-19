@@ -597,9 +597,9 @@ subscribe(topic, instance, handler) { ... }
 
 | 문서 | 내용 |
 |------|------|
-| [README.md](../README.md) | 아키텍처 전체 가이드 |
-| [TEST_SCENARIOS.md](./TEST_SCENARIOS.md) | 테스트 시나리오 (What) |
-| [TESTING_GUIDE.md](../tests/TESTING_GUIDE.md) | 테스트 구현 가이드 (How) |
+| [README.md](/RNBT_architecture/README.md) | 아키텍처 전체 가이드 |
+| [TEST_SCENARIOS.md](/RNBT_architecture/docs/TEST_SCENARIOS.md) | 테스트 시나리오 (What) |
+| [TESTING_GUIDE.md](/RNBT_architecture/tests/TESTING_GUIDE.md) | 테스트 구현 가이드 (How) |
 
 ---
 

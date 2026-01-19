@@ -229,10 +229,10 @@ npm start  # http://localhost:4004
 
 ## 참고 문서
 
-- [API_SPEC.md](../../API_SPEC.md) - API 명세
-- [I18N_SPEC.md](../../I18N_SPEC.md) - 다국어 설계 명세
-- [docs/codeflow.md](docs/codeflow.md) - 코드 흐름 설명
-- [docs/TREE_RENDERING.md](docs/TREE_RENDERING.md) - 트리 렌더링 상세 문서
+- [API_SPEC.md](/RNBT_architecture/Projects/ECO/API_SPEC.md) - API 명세
+- [I18N_SPEC.md](/RNBT_architecture/Projects/ECO/I18N_SPEC.md) - 다국어 설계 명세
+- [docs/codeflow.md](/RNBT_architecture/Projects/ECO/page/components/AssetList/docs/codeflow.md) - 코드 흐름 설명
+- [docs/TREE_RENDERING.md](/RNBT_architecture/Projects/ECO/page/components/AssetList/docs/TREE_RENDERING.md) - 트리 렌더링 상세 문서
 
 ---
 

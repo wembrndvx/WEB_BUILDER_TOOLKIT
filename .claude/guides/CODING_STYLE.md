@@ -482,7 +482,7 @@ function handleClick(event) {
 
 ## fx.js 라이브러리
 
-fx.js는 `RNBT_architecture/Utils/fx.js`에 위치합니다.
+fx.js는 `/RNBT_architecture/Utils/fx.js`에 위치합니다.
 
 **주요 함수:**
 - `fx.go` - 파이프라인 실행
