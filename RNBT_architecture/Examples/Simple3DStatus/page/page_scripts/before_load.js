@@ -21,15 +21,15 @@ this.eventBusHandlers = Object.assign(this.eventBusHandlers || {}, {
      * bind3DEvents에서 발행한 이벤트를 처리
      * intersects 배열에서 클릭된 객체 정보 추출
      */
-    '@3dObjectClicked': async ({ event: { intersects }, targetInstance: { datasetInfo, meshStatusConfig} }) => {
+    '@3dObjectClicked': async ({ event: { intersects }, targetInstance: { datasetInfo, meshStatusConfig } }) => {
         go(
             intersects,
-            fx.take(1),
-            targetObject => fx.go(
-            datasetInfo,
-            fx.map((info) => ({datasetName: info.datasetName, param: info.getParam(targetObject, meshStatusConfig)})),
-            fx.filter(({param}) => param),
-            fx.each(({datasetName, param}) => fetchData(this, datasetName, param).then(console.log).catch(console.error))
+            fx.find(({ object }) => fx.find(c => c.meshName === object.name, meshStatusConfig)),
+            ({ object }) => fx.go(
+                datasetInfo,
+                fx.map((info) => ({ datasetName: info.datasetName, param: info.getParam(object, meshStatusConfig) })),
+                fx.filter(({ param }) => param),
+                fx.each(({ datasetName, param }) => Wkit.fetchData(this, datasetName, param).then(console.log).catch(console.error))
             )
         )
     }
