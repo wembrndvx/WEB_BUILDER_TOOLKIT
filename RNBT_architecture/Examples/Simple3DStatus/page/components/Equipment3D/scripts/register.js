@@ -28,13 +28,13 @@ const { bind3DEvents } = Wkit;
  *
  * 이 config를 통해 어떤 mesh가 어떤 장비의 상태를 표시할지 결정
  */
-const meshStatusConfig = [
-    { meshName: 'Rack_A', equipmentId: 'eq-001' },
-    { meshName: 'Rack_B', equipmentId: 'eq-002' },
-    { meshName: 'Cooling_01', equipmentId: 'eq-003' },
-    { meshName: 'Cooling_02', equipmentId: 'eq-004' },
-    { meshName: 'Power_Main', equipmentId: 'eq-005' },
-    { meshName: 'UPS_01', equipmentId: 'eq-006' }
+this.meshStatusConfig = [
+    { meshName: 'OctahedronComponent', equipmentId: 'eq-001' },
+    { meshName: 'SphereComponent', equipmentId: 'eq-002' },
+    { meshName: 'TorusComponent', equipmentId: 'eq-003' },
+    { meshName: 'BoxComponent', equipmentId: 'eq-004' },
+    { meshName: 'ConeComponent', equipmentId: 'eq-005' },
+    { meshName: 'CylinderComponent', equipmentId: 'eq-006' }
 ];
 
 // ======================
@@ -57,7 +57,7 @@ this._equipmentStatusCache = new Map();
 // BINDINGS
 // ======================
 
-this.updateMeshStatus = updateMeshStatus.bind(this, meshStatusConfig);
+this.updateMeshStatus = updateMeshStatus.bind(this, this.meshStatusConfig);
 
 // ======================
 // SUBSCRIPTIONS
@@ -91,14 +91,17 @@ this.customEvents = {
 /**
  * datasetInfo: 3D 클릭 시 상세 데이터 fetch를 위한 정보
  * 페이지의 이벤트 핸들러에서 fetchData(this, datasetName, param) 형태로 사용
+ *
+ * getParam(intersectedObject, targetInstance): 동적으로 param 생성
+ * - intersectedObject: 클릭된 3D 객체
+ * - targetInstance: 컴포넌트 인스턴스 (this.meshStatusConfig 등 접근 가능)
  */
 this.datasetInfo = [
     {
         datasetName: 'equipmentDetailApi',
-        getParam: (intersectedObject) => {
-            // intersectedObject에서 장비 ID 추출
+        getParam: (intersectedObject, meshStatusConfig) => {
             const meshName = intersectedObject?.name;
-            const config = meshStatusConfig.find(c => c.meshName === meshName);
+            const config = meshStatusConfig?.find(c => c.meshName === meshName);
             return config ? { id: config.equipmentId } : null;
         }
     }
@@ -106,7 +109,7 @@ this.datasetInfo = [
 
 bind3DEvents(this, this.customEvents);
 
-console.log('[Equipment3D] Registered with', meshStatusConfig.length, 'mesh mappings');
+console.log('[Equipment3D] Registered with', this.meshStatusConfig.length, 'mesh mappings');
 
 // ======================
 // RENDER FUNCTIONS
@@ -130,41 +133,45 @@ function updateMeshStatus(meshStatusConfig, { response }) {
     }
 
     // 상태 캐시 업데이트
-    data.forEach(eq => {
-        this._equipmentStatusCache.set(eq.id, {
+    fx.go(
+        data,
+        fx.each(eq => this._equipmentStatusCache.set(eq.id, {
             status: eq.status,
             color: eq.color
-        });
-    });
+        }))
+    );
 
-    // 각 mesh의 color 업데이트
+    // 파이프라인: config → 데이터 매칭 → mesh 찾기 → color 업데이트
     fx.go(
         meshStatusConfig,
-        fx.each(({ meshName, equipmentId }) => {
-            const equipment = data.find(eq => eq.id === equipmentId);
-            if (!equipment) return;
-
-            // MainGroup에서 해당 이름의 mesh 찾기
-            const mesh = mainGroup.getObjectByName(meshName);
-            if (!mesh) {
-                console.warn(`[Equipment3D] Mesh not found: ${meshName}`);
-                return;
-            }
-
-            // 원본 material 저장 (최초 1회)
-            if (!this._originalMaterials.has(meshName) && mesh.material) {
-                this._originalMaterials.set(meshName, mesh.material.clone());
-            }
-
-            // material color 업데이트
-            if (mesh.material && mesh.material.color) {
-                mesh.material.color.set(equipment.color);
-                mesh.material.needsUpdate = true;
-            }
-
-            console.log(`[Equipment3D] ${meshName} → ${equipment.status} (${equipment.color})`);
-        })
+        fx.map(cfg => ({ cfg, equipment: data.find(eq => eq.id === cfg.equipmentId) })),
+        fx.filter(({ equipment }) => equipment),
+        fx.map(({ cfg, equipment }) => ({
+            ...cfg,
+            equipment,
+            mesh: mainGroup.getObjectByName(cfg.meshName)
+        })),
+        fx.filter(({ mesh }) => mesh),
+        fx.each(ctx => applyMeshColor.call(this, ctx))
     );
 
     console.log('[Equipment3D] Mesh status updated for', data.length, 'equipments');
+}
+
+/**
+ * mesh에 상태 color 적용
+ */
+function applyMeshColor({ meshName, equipment, mesh }) {
+    // 원본 material 저장 (최초 1회)
+    if (!this._originalMaterials.has(meshName) && mesh.material) {
+        this._originalMaterials.set(meshName, mesh.material.clone());
+    }
+
+    // material color 업데이트
+    if (mesh.material?.color) {
+        mesh.material.color.set(equipment.color);
+        mesh.material.needsUpdate = true;
+    }
+
+    console.log(`[Equipment3D] ${meshName} → ${equipment.status} (${equipment.color})`);
 }

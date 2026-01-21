@@ -21,32 +21,17 @@ this.eventBusHandlers = Object.assign(this.eventBusHandlers || {}, {
      * bind3DEvents에서 발행한 이벤트를 처리
      * intersects 배열에서 클릭된 객체 정보 추출
      */
-    '@3dObjectClicked': async ({ event, targetInstance }) => {
-        const intersects = event.intersects;
-        if (!intersects || intersects.length === 0) {
-            console.log('[Page] 3D click - no intersection');
-            return;
-        }
-
-        const clickedObject = intersects[0].object;
-        console.log('[Page] 3D object clicked:', clickedObject.name);
-
-        // datasetInfo가 있으면 상세 데이터 fetch
-        const { datasetInfo } = targetInstance;
-        if (datasetInfo?.length) {
-            for (const { datasetName, getParam } of datasetInfo) {
-                const param = getParam ? getParam(clickedObject) : null;
-                if (!param) continue;
-
-                try {
-                    const data = await fetchData(this, datasetName, param);
-                    console.log('[Page] Equipment detail:', data);
-                    // 확장 포인트: 상세 정보 팝업 표시 등
-                } catch (err) {
-                    console.error(`[Page] fetchData(${datasetName}) failed:`, err);
-                }
-            }
-        }
+    '@3dObjectClicked': async ({ event: { intersects }, targetInstance: { datasetInfo, meshStatusConfig} }) => {
+        go(
+            intersects,
+            fx.take(1),
+            targetObject => fx.go(
+            datasetInfo,
+            fx.map((info) => ({datasetName: info.datasetName, param: info.getParam(targetObject, meshStatusConfig)})),
+            fx.filter(({param}) => param),
+            fx.each(({datasetName, param}) => fetchData(this, datasetName, param).then(console.log).catch(console.error))
+            )
+        )
     }
 });
 

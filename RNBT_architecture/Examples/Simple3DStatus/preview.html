@@ -468,18 +468,68 @@
     </div>
 
     <script>
-        // Mock: 클릭 이벤트 시뮬레이션
+        // ======================
+        // Mock Config (register.js 패턴)
+        // ======================
+        const meshStatusConfig = [
+            { meshName: 'Rack_A', equipmentId: 'eq-001' },
+            { meshName: 'Rack_B', equipmentId: 'eq-002' },
+            { meshName: 'Cooling_01', equipmentId: 'eq-003' },
+            { meshName: 'Cooling_02', equipmentId: 'eq-004' },
+            { meshName: 'Power_Main', equipmentId: 'eq-005' },
+            { meshName: 'UPS_01', equipmentId: 'eq-006' }
+        ];
+
+        const datasetInfo = [
+            {
+                datasetName: 'equipmentDetailApi',
+                getParam: (intersectedObject, meshStatusConfig) => {
+                    const meshName = intersectedObject?.name;
+                    const config = meshStatusConfig?.find(c => c.meshName === meshName);
+                    return config ? { id: config.equipmentId } : null;
+                }
+            }
+        ];
+
+        // ======================
+        // Mock fetchData
+        // ======================
+        const fetchData = (context, datasetName, param) => {
+            console.log(`[Preview] fetchData(${datasetName}, ${JSON.stringify(param)})`);
+            return Promise.resolve({ id: param.id, status: 'normal', name: 'Mock Equipment' });
+        };
+
+        // ======================
+        // 2D 클릭 핸들러 (before_load.js 패턴 단순화)
+        // ======================
+        // 실제 런타임: go(intersects, fx.take(1), targetObject => ...)
+        // preview: 2D이므로 클릭된 요소에서 직접 meshName 추출
+        const handleClick = (el) => {
+            const targetObject = { name: el.dataset.mesh };
+
+            datasetInfo
+                .map(info => ({ datasetName: info.datasetName, param: info.getParam(targetObject, meshStatusConfig) }))
+                .filter(({ param }) => param)
+                .forEach(({ datasetName, param }) => {
+                    fetchData(null, datasetName, param)
+                        .then(data => {
+                            console.log('[Preview] Equipment detail:', data);
+                            alert(`Equipment: ${el.querySelector('.equipment-name').textContent}\nStatus: ${el.querySelector('.equipment-status').textContent}\nMesh: ${el.dataset.mesh}`);
+                        })
+                        .catch(console.error);
+                });
+        };
+
+        // ======================
+        // 이벤트 바인딩
+        // ======================
         document.querySelectorAll('.mock-equipment').forEach(el => {
-            el.addEventListener('click', () => {
-                const meshName = el.dataset.mesh;
-                const equipmentId = el.dataset.id;
-                console.log(`[Preview] Clicked: ${meshName} (${equipmentId})`);
-                alert(`Equipment: ${el.querySelector('.equipment-name').textContent}\nStatus: ${el.querySelector('.equipment-status').textContent}\nMesh: ${meshName}`);
-            });
+            el.addEventListener('click', () => handleClick(el));
         });
 
         console.log('[Preview] Simple3DStatus preview loaded');
         console.log('[Preview] Note: This is a static preview. Actual 3D rendering uses Three.js.');
+        console.log('[Preview] Pattern: datasetInfo.map → filter → forEach (2D simplified)');
     </script>
 </body>
 </html>
