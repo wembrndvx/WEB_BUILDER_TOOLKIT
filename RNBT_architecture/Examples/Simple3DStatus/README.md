@@ -119,24 +119,29 @@ const meshStatusConfig = [
 ];
 ```
 
-### 2. Material Color 업데이트
+### 2. Material Color 업데이트 (파이프라인 패턴)
 
 ```javascript
-function updateMeshStatus(config, { response }) {
+function updateMeshStatus(meshStatusConfig, { response }) {
     const { data } = response;
+    const mainGroup = this.appendElement;
 
-    config.forEach(({ meshName, equipmentId }) => {
-        const equipment = data.find(eq => eq.id === equipmentId);
-        const mesh = mainGroup.getObjectByName(meshName);
-
-        if (mesh && equipment) {
-            mesh.material.color.set(equipment.color);
-        }
-    });
+    fx.go(
+        meshStatusConfig,
+        fx.map(cfg => ({ cfg, equipment: data.find(eq => eq.id === cfg.equipmentId) })),
+        fx.filter(({ equipment }) => equipment),
+        fx.map(({ cfg, equipment }) => ({
+            ...cfg,
+            equipment,
+            mesh: mainGroup.getObjectByName(cfg.meshName)
+        })),
+        fx.filter(({ mesh }) => mesh),
+        fx.each(ctx => applyMeshColor.call(this, ctx))
+    );
 }
 ```
 
-### 3. 3D 이벤트 처리
+### 3. 3D 이벤트 처리 (모나드 합성 패턴)
 
 ```javascript
 // 컴포넌트: 이벤트 발행
@@ -145,9 +150,17 @@ this.customEvents = {
 };
 
 // 페이지: 이벤트 핸들러
-'@3dObjectClicked': async ({ event, targetInstance }) => {
-    const clickedObject = event.intersects[0].object;
-    // 상세 데이터 fetch 및 처리
+'@3dObjectClicked': async ({ event: { intersects }, targetInstance: { datasetInfo, meshStatusConfig } }) => {
+    go(
+        intersects,
+        fx.filter(intersect => fx.find(c => c.meshName === intersect.object.name, meshStatusConfig)),
+        fx.each(target => fx.go(
+            datasetInfo,
+            fx.map(info => ({ datasetName: info.datasetName, param: info.getParam(target.object, meshStatusConfig) })),
+            fx.filter(({ param }) => param),
+            fx.each(({ datasetName, param }) => Wkit.fetchData(this, datasetName, param))
+        ))
+    )
 }
 ```
 

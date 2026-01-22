@@ -86,9 +86,9 @@ this.customEvents = {
  * datasetInfo: 3D 클릭 시 상세 데이터 fetch를 위한 정보
  * 페이지의 이벤트 핸들러에서 fetchData(this, datasetName, param) 형태로 사용
  *
- * getParam(intersectedObject, targetInstance): 동적으로 param 생성
+ * getParam(intersectedObject, meshStatusConfig): 동적으로 param 생성
  * - intersectedObject: 클릭된 3D 객체
- * - targetInstance: 컴포넌트 인스턴스 (this.meshStatusConfig 등 접근 가능)
+ * - meshStatusConfig: mesh-ID 매핑 config
  */
 this.datasetInfo = [
     {

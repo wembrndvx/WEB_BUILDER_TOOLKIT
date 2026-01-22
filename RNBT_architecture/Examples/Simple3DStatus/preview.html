@@ -471,6 +471,9 @@
         // ======================
         // Mock Config (register.js 패턴)
         // ======================
+        // Note: 실제 register.js에서는 3D 모델의 mesh 이름 사용
+        // (예: 'OctahedronComponent', 'SphereComponent')
+        // preview.html은 2D 정적 미리보기이므로 HTML data-mesh와 일치하는 값 사용
         const meshStatusConfig = [
             { meshName: 'Rack_A', equipmentId: 'eq-001' },
             { meshName: 'Rack_B', equipmentId: 'eq-002' },
