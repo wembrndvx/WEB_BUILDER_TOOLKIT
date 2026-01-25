@@ -14,7 +14,7 @@
       "description": "Asset API v1 - 자산 전체 목록 조회",
       "dataset_id": "ast-list-001",
       "name": "assetList",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/v1/ast/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{},\\\"sort\\\":[{\\\"field\\\":\\\"createdAt\\\",\\\"direction\\\":\\\"DESC\\\"}]}\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/v1/ast/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{},\\\"sort\\\":[{\\\"field\\\":\\\"createdAt\\\",\\\"direction\\\":\\\"DESC\\\"}]}\"}"
     },
     {
       "datasource": "",
@@ -40,7 +40,7 @@
       "description": "Asset API v1 - 자산 목록 조회 (페이징)",
       "dataset_id": "ast-list-paged-001",
       "name": "assetListPaged",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/v1/ast/la\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"page\\\":#{page},\\\"size\\\":#{size},\\\"filter\\\":{},\\\"sort\\\":[{\\\"field\\\":\\\"createdAt\\\",\\\"direction\\\":\\\"DESC\\\"}]}\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/v1/ast/la\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"page\\\":#{page},\\\"size\\\":#{size},\\\"filter\\\":{},\\\"sort\\\":[{\\\"field\\\":\\\"createdAt\\\",\\\"direction\\\":\\\"DESC\\\"}]}\"}"
     },
     {
       "datasource": "",
@@ -61,7 +61,7 @@
       "description": "Asset API v1 - 자산 단건 조회",
       "dataset_id": "ast-detail-001",
       "name": "assetDetail",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/v1/ast/g\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"assetKey\\\":\\\"#{assetKey}\\\"}\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/v1/ast/g\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"assetKey\\\":\\\"#{assetKey}\\\"}\"}"
     },
     {
       "datasource": "",
@@ -76,7 +76,7 @@
       "description": "Asset API v1 - 관계 전체 목록 조회 (트리 구조용)",
       "dataset_id": "rel-list-001",
       "name": "relationList",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/v1/rel/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{},\\\"sort\\\":[{\\\"field\\\":\\\"createdAt\\\",\\\"direction\\\":\\\"DESC\\\"}]}\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/v1/rel/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{},\\\"sort\\\":[{\\\"field\\\":\\\"createdAt\\\",\\\"direction\\\":\\\"DESC\\\"}]}\"}"
     },
     {
       "datasource": "",
@@ -97,7 +97,7 @@
       "description": "Asset API v1 - 특정 부모의 자식 관계 조회 (lazy loading용)",
       "dataset_id": "rel-children-001",
       "name": "relationChildren",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/v1/rel/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"toAssetKey\\\":\\\"#{toAssetKey}\\\"},\\\"sort\\\":[]}\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/v1/rel/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"toAssetKey\\\":\\\"#{toAssetKey}\\\"},\\\"sort\\\":[]}\"}"
     },
     {
       "datasource": "",
@@ -118,294 +118,7 @@
       "description": "Asset API v1 - 특정 자산의 부모 관계 조회",
       "dataset_id": "rel-parent-001",
       "name": "relationParent",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/v1/rel/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"fromAssetKey\\\":\\\"#{fromAssetKey}\\\"},\\\"sort\\\":[]}\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "depth",
-          "param_type": "number",
-          "default_value": "1"
-        },
-        {
-          "param_name": "locale",
-          "param_type": "string",
-          "default_value": "ko"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "Building-Floor-Room hierarchy structure (i18n supported)",
-      "dataset_id": "hierarchy-001",
-      "name": "hierarchy",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/hierarchy?depth=#{depth}&locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": ""
-        },
-        {
-          "param_name": "locale",
-          "param_type": "string",
-          "default_value": "ko"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "Children of hierarchy asset (Lazy Loading, i18n supported)",
-      "dataset_id": "hierarchy-children-001",
-      "name": "hierarchyChildren",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/hierarchy/#{assetId}/children?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": ""
-        },
-        {
-          "param_name": "locale",
-          "param_type": "string",
-          "default_value": "ko"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "Assets in selected hierarchy asset (i18n supported)",
-      "dataset_id": "hierarchy-assets-001",
-      "name": "hierarchyAssets",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/hierarchy/#{assetId}/assets?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": "ups-001"
-        },
-        {
-          "param_name": "locale",
-          "param_type": "string",
-          "default_value": "ko"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "UPS current status with field metadata (i18n supported)",
-      "dataset_id": "ups-001",
-      "name": "ups",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/ups/#{assetId}?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": "ups-001"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "UPS load/battery history (on-demand)",
-      "dataset_id": "ups-history-001",
-      "name": "upsHistory",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/ups/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": "pdu-001"
-        },
-        {
-          "param_name": "locale",
-          "param_type": "string",
-          "default_value": "ko"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "PDU current status with field metadata (i18n supported)",
-      "dataset_id": "pdu-001",
-      "name": "pdu",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/pdu/#{assetId}?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": "pdu-001"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "PDU circuit list (on-demand)",
-      "dataset_id": "pdu-circuits-001",
-      "name": "pduCircuits",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/pdu/#{assetId}/circuits\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": "pdu-001"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "PDU power/current history (on-demand)",
-      "dataset_id": "pdu-history-001",
-      "name": "pduHistory",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/pdu/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": "crac-001"
-        },
-        {
-          "param_name": "locale",
-          "param_type": "string",
-          "default_value": "ko"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "CRAC current status with field metadata (i18n supported)",
-      "dataset_id": "crac-001",
-      "name": "crac",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/crac/#{assetId}?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": "crac-001"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "CRAC temperature/humidity history (on-demand)",
-      "dataset_id": "crac-history-001",
-      "name": "cracHistory",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/crac/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": "sensor-001"
-        },
-        {
-          "param_name": "locale",
-          "param_type": "string",
-          "default_value": "ko"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "Temperature/Humidity sensor current status with field metadata (i18n supported)",
-      "dataset_id": "sensor-001",
-      "name": "sensor",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/sensor/#{assetId}?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "assetId",
-          "param_type": "string",
-          "default_value": "sensor-001"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "Sensor temperature/humidity history (on-demand)",
-      "dataset_id": "sensor-history-001",
-      "name": "sensorHistory",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/sensor/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/v1/rel/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"fromAssetKey\\\":\\\"#{fromAssetKey}\\\"},\\\"sort\\\":[]}\"}"
     }
   ],
   "datasource": []
