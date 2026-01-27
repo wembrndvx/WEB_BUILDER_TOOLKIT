@@ -86,8 +86,6 @@ function initComponent() {
   this.search = search.bind(this);
   this.filterByType = filterByType.bind(this);
   this.filterByStatus = filterByStatus.bind(this);
-  this.getAncestorKeys = getAncestorKeys.bind(this);
-  this.expandToNode = expandToNode.bind(this);
 
   // ======================
   // 5. SUBSCRIBE
@@ -512,8 +510,9 @@ async function toggleNode(nodeId) {
 
   try {
     // Relation API로 자식 관계 조회 (toAssetKey = 현재 노드)
-    const relResult = await fetchData(this.page, 'relationList', {
-      filter: { toAssetKey: nodeId, relationType: 'LOCATED_IN' },
+    const relResult = await fetchData(this.page, 'relationChildren', {
+      toAssetKey: nodeId,
+      relationType: 'LOCATED_IN',
     });
     const relations = relResult?.response?.data || [];
     console.log(`[AssetList] Children relations for ${nodeId}:`, relations.length);
@@ -621,48 +620,6 @@ function updateNodeVisuals(nodeId) {
 
   if (toggle) toggle.classList.toggle('expanded', isExpanded);
   if (children) children.classList.toggle('expanded', isExpanded);
-}
-
-/**
- * 특정 노드의 조상 경로 반환 (3D 동기화용)
- * @param {string} assetKey
- * @returns {string[]} 루트부터 해당 노드까지의 assetKey 배열
- */
-function getAncestorKeys(assetKey) {
-  const ancestors = [];
-  let current = assetKey;
-
-  while (current) {
-    ancestors.unshift(current);
-    current = this._cache.parent.get(current);
-  }
-
-  return ancestors;
-}
-
-/**
- * 특정 노드까지 경로 확장 후 선택 (3D 컴포넌트 선택 시 사용)
- * @param {string} assetKey
- */
-async function expandToNode(assetKey) {
-  const ancestors = this.getAncestorKeys(assetKey);
-
-  // 루트를 제외한 조상 노드들을 순차적으로 펼치기
-  for (let i = 0; i < ancestors.length - 1; i++) {
-    const key = ancestors[i];
-    if (!this._expandedNodes.has(key)) {
-      await this.toggleNode(key);
-    }
-  }
-
-  // 최종 노드 선택
-  this.selectNode(assetKey);
-
-  // 스크롤
-  const nodeEl = this.appendElement.querySelector(`[data-node-id="${assetKey}"]`);
-  if (nodeEl) {
-    nodeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
 }
 
 // ======================
