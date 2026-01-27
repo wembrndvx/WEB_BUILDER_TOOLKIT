@@ -223,13 +223,19 @@
     // 동적 프로퍼티 렌더링 (통합 API - data.properties[])
     function renderProperties({ response }) {
       const { data } = response;
-      if (!data || !data.properties) {
-        console.warn('[UPS] renderProperties: properties is null');
-        return;
-      }
-
       const container = this.popupQuery(this.fieldsContainerSelector);
       if (!container) return;
+
+      // properties가 없거나 빈 배열인 경우
+      if (!data?.properties || data.properties.length === 0) {
+        container.innerHTML = `
+          <div class="value-card" style="grid-column: 1 / -1; text-align: center;">
+            <div class="value-label">알림</div>
+            <div class="value-data" style="font-size: 14px; color: #6b7280;">프로퍼티 정보가 없습니다</div>
+          </div>
+        `;
+        return;
+      }
 
       // displayOrder로 정렬된 properties 배열을 카드로 렌더링
       const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));

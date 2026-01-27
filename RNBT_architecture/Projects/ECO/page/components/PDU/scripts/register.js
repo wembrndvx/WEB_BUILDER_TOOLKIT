@@ -316,13 +316,19 @@ function renderAssetInfo({ response }) {
 // 동적 프로퍼티 렌더링 (통합 API - data.properties[])
 function renderProperties({ response }) {
   const { data } = response;
-  if (!data || !data.properties) {
-    console.warn('[PDU] renderProperties: properties is null');
-    return;
-  }
-
   const container = this.popupQuery(this.fieldsContainerSelector);
   if (!container) return;
+
+  // properties가 없거나 빈 배열인 경우
+  if (!data?.properties || data.properties.length === 0) {
+    container.innerHTML = `
+      <div class="summary-item" style="grid-column: 1 / -1; text-align: center;">
+        <span class="summary-label">알림</span>
+        <span class="summary-value" style="color: #6b7280;">프로퍼티 정보가 없습니다</span>
+      </div>
+    `;
+    return;
+  }
 
   // displayOrder로 정렬된 properties 배열을 카드로 렌더링
   const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
