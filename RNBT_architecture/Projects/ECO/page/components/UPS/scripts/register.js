@@ -61,16 +61,14 @@
       // 동적 필드 컨테이너 selector
       this.fieldsContainerSelector = '.fields-container';
 
-      // chartConfig: API fields를 활용한 동적 렌더링
-      // - xKey, valuesKey: API 응답 구조에 맞게 수정 필요
-      // - series 정보는 API response의 fields 배열에서 가져옴
-      // - 색상 등 스타일 정보만 로컬에서 정의
+      // chartConfig: 차트 렌더링 설정
+      // - xKey: X축 데이터 키
+      // - styleMap: 시리즈별 메타데이터 + 스타일 (키는 API 응답 필드명)
       this.chartConfig = {
-        xKey: 'timestamps', // ← API 응답의 x축 데이터 키
-        valuesKey: 'values', // ← API 응답의 시계열 데이터 객체 키
+        xKey: 'timestamps',
         styleMap: {
-          load: { color: '#3b82f6', smooth: true, areaStyle: true },
-          battery: { color: '#22c55e', smooth: true },
+          load: { label: '부하율', unit: '%', color: '#3b82f6', smooth: true, areaStyle: true },
+          battery: { label: '배터리', unit: '%', color: '#22c55e', smooth: true },
         },
         optionBuilder: getMultiLineChartOption,
       };
@@ -267,7 +265,7 @@
         console.warn('[UPS] renderChart: data is null');
         return;
       }
-      if (!data.fields || !data[config.valuesKey]) {
+      if (!data[config.xKey]) {
         console.warn('[UPS] renderChart: chart data is incomplete');
         return;
       }
@@ -311,20 +309,17 @@
     // ======================
 
     function getMultiLineChartOption(config, data) {
-      const { xKey, valuesKey, styleMap } = config;
-      const { fields } = data;
-      const values = data[valuesKey];
+      const { xKey, styleMap } = config;
 
-      // API fields를 기반으로 series 생성
-      const seriesData = fields.map((field) => {
-        const style = styleMap[field.key] || {};
-        return {
-          key: field.key,
-          name: field.label,
-          unit: field.unit,
-          ...style,
-        };
-      });
+      // styleMap 기반으로 series 생성
+      const seriesData = Object.entries(styleMap).map(([key, style]) => ({
+        key,
+        name: style.label,
+        unit: style.unit,
+        color: style.color,
+        smooth: style.smooth,
+        areaStyle: style.areaStyle,
+      }));
 
       return {
         grid: { left: 45, right: 16, top: 30, bottom: 24 },
@@ -356,7 +351,7 @@
         series: seriesData.map(({ key, name, color, smooth, areaStyle }) => ({
           name,
           type: 'line',
-          data: values[key],
+          data: data[key],
           smooth,
           symbol: 'none',
           lineStyle: { color, width: 2 },

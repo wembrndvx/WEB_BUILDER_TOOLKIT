@@ -104,16 +104,14 @@ function initComponent() {
 
   // ======================
   // 5. Chart Config - ECharts 옵션 빌더
-  // - xKey, valuesKey: API 응답 구조에 맞게 수정 필요
-  // - series 정보는 API response의 fields 배열에서 가져옴
-  // - 색상, yAxisIndex 등 스타일 정보만 로컬에서 정의
+  // - xKey: X축 데이터 키
+  // - styleMap: 시리즈별 메타데이터 + 스타일 (키는 API 응답 필드명)
   // ======================
   this.chartConfig = {
-    xKey: 'timestamps', // ← API 응답의 x축 데이터 키
-    valuesKey: 'values', // ← API 응답의 시계열 데이터 객체 키
+    xKey: 'timestamps',
     styleMap: {
-      power: { color: '#3b82f6', smooth: true, areaStyle: true, yAxisIndex: 0 },
-      current: { color: '#f59e0b', smooth: true, yAxisIndex: 1 },
+      power: { label: '전력', unit: 'kW', color: '#3b82f6', smooth: true, areaStyle: true, yAxisIndex: 0 },
+      current: { label: '전류', unit: 'A', color: '#f59e0b', smooth: true, yAxisIndex: 1 },
     },
     optionBuilder: getDualAxisChartOption,
   };
@@ -397,7 +395,7 @@ function renderPowerChart(config, { response }) {
     console.warn('[PDU] renderPowerChart: data is null');
     return;
   }
-  if (!data.fields || !data[config.valuesKey]) {
+  if (!data[config.xKey]) {
     console.warn('[PDU] renderPowerChart: chart data is incomplete');
     return;
   }
@@ -450,22 +448,20 @@ function getTableOption(columns) {
 // ======================
 
 function getDualAxisChartOption(config, data) {
-  const { xKey, valuesKey, styleMap } = config;
-  const { fields } = data;
-  const values = data[valuesKey];
+  const { xKey, styleMap } = config;
 
-  // API fields를 기반으로 series 생성
-  const seriesData = fields.map((field) => {
-    const style = styleMap[field.key] || {};
-    return {
-      key: field.key,
-      name: field.label,
-      unit: field.unit,
-      ...style,
-    };
-  });
+  // styleMap 기반으로 series 생성
+  const seriesData = Object.entries(styleMap).map(([key, style]) => ({
+    key,
+    name: style.label,
+    unit: style.unit,
+    color: style.color,
+    smooth: style.smooth,
+    areaStyle: style.areaStyle,
+    yAxisIndex: style.yAxisIndex,
+  }));
 
-  // yAxis 설정: fields의 unit 정보 활용
+  // yAxis 설정: styleMap의 unit 정보 활용
   const yAxisUnits = [...new Set(seriesData.map((s) => s.unit))];
   const yAxes = yAxisUnits.map((unit, idx) => ({
     type: 'value',
@@ -500,7 +496,7 @@ function getDualAxisChartOption(config, data) {
       name,
       type: 'line',
       yAxisIndex,
-      data: values[key],
+      data: data[key],
       smooth,
       symbol: 'none',
       lineStyle: { color, width: 2 },

@@ -155,14 +155,15 @@ HTML 템플릿의 class명이 바뀌면 이 config도 함께 수정해야 합니
 
 ### 컴포넌트별 styleMap
 
+`styleMap`은 시리즈별 **메타데이터(label, unit) + 스타일(color, smooth 등)**을 모두 포함합니다.
+
 ```javascript
 // UPS - 단일 Y축 (%)
 this.chartConfig = {
     xKey: 'timestamps',
-    valuesKey: 'values',
     styleMap: {
-        load: { color: '#3b82f6', smooth: true, areaStyle: true },
-        battery: { color: '#22c55e', smooth: true },
+        load: { label: '부하율', unit: '%', color: '#3b82f6', smooth: true, areaStyle: true },
+        battery: { label: '배터리', unit: '%', color: '#22c55e', smooth: true },
     },
     optionBuilder: getMultiLineChartOption,
 };
@@ -170,10 +171,9 @@ this.chartConfig = {
 // PDU - 이중 Y축 (kW / A)
 this.chartConfig = {
     xKey: 'timestamps',
-    valuesKey: 'values',
     styleMap: {
-        power: { color: '#3b82f6', smooth: true, areaStyle: true, yAxisIndex: 0 },
-        current: { color: '#f59e0b', smooth: true, yAxisIndex: 1 },
+        power: { label: '전력', unit: 'kW', color: '#3b82f6', smooth: true, areaStyle: true, yAxisIndex: 0 },
+        current: { label: '전류', unit: 'A', color: '#f59e0b', smooth: true, yAxisIndex: 1 },
     },
     optionBuilder: getDualAxisChartOption,
 };
@@ -181,11 +181,10 @@ this.chartConfig = {
 // CRAC - 이중 Y축 (°C / %)
 this.chartConfig = {
     xKey: 'timestamps',
-    valuesKey: 'values',
     styleMap: {
-        supplyTemp: { color: '#3b82f6', yAxisIndex: 0 },  // 공급 온도
-        returnTemp: { color: '#ef4444', yAxisIndex: 0 },  // 환기 온도
-        humidity: { color: '#22c55e', yAxisIndex: 1 },    // 습도
+        supplyTemp: { label: '공급 온도', unit: '°C', color: '#3b82f6', yAxisIndex: 0 },
+        returnTemp: { label: '환기 온도', unit: '°C', color: '#ef4444', yAxisIndex: 0 },
+        humidity: { label: '습도', unit: '%', color: '#22c55e', yAxisIndex: 1 },
     },
     optionBuilder: getDualAxisChartOption,
 };
@@ -193,14 +192,24 @@ this.chartConfig = {
 // TempHumiditySensor - 이중 Y축 (°C / %)
 this.chartConfig = {
     xKey: 'timestamps',
-    valuesKey: 'values',
     styleMap: {
-        temperature: { color: '#3b82f6', yAxisIndex: 0 },
-        humidity: { color: '#22c55e', yAxisIndex: 1 },
+        temperature: { label: '온도', unit: '°C', color: '#3b82f6', yAxisIndex: 0 },
+        humidity: { label: '습도', unit: '%', color: '#22c55e', yAxisIndex: 1 },
     },
     optionBuilder: getDualAxisChartOption,
 };
 ```
+
+### styleMap 필드 설명
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `label` | string | O | UI에 표시할 시리즈 이름 |
+| `unit` | string | O | 단위 (Y축 라벨, 툴팁에 사용) |
+| `color` | string | O | 시리즈 색상 |
+| `smooth` | boolean | X | 라인 스무딩 |
+| `areaStyle` | boolean | X | 영역 채우기 |
+| `yAxisIndex` | number | X | Y축 인덱스 (이중 Y축 시 사용, 기본값: 0) |
 
 ### styleMap 비교표
 
@@ -215,8 +224,9 @@ this.chartConfig = {
 
 | 항목 | 하드코딩 여부 | 이유 |
 |------|--------------|------|
-| `xKey`, `valuesKey` | O | API 응답 구조에 종속 |
-| `styleMap` keys | O | API 응답의 필드명에 종속 |
+| `xKey` | O | API 응답 구조에 종속 (X축 데이터 키) |
+| `styleMap` keys | O | API 응답의 필드명에 종속 (시리즈 데이터 키) |
+| `label`, `unit` | O | UI 표시 텍스트 (다국어 시 별도 처리 필요) |
 | `color` | O | UI 디자인 결정 사항 |
 | `yAxisIndex` | O | 차트 축 구성에 종속 |
 
