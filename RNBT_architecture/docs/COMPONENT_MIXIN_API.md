@@ -146,9 +146,9 @@ class PDUModel extends WV3DResourceComponent {
 
 ```javascript
 this.selectItem = {
-    path: '/models/pdu.glb',
-    mapPath: '/textures/',
-    // 기타 속성...
+    path: '/custom/packs/ECO/components/Asset/UPSComponent/modeling/UPS.gltf',
+    mapPath: '/custom/packs/ECO/components/Asset/UPSComponent/modeling/maps/',
+    name: 'UPS'
 };
 ```
 
