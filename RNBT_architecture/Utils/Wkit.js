@@ -138,7 +138,8 @@ Wkit.makeIterator = function (page, ...layerList) {
   return combineIterators(
     fx.go(
       layerList,
-      fx.map((layer) => page?.[layer]?.[mapName[layer]]?.values())
+      fx.map((layer) => page?.[layer]?.[mapName[layer]]?.values()),
+      fx.filter(Boolean)
     )
   );
 };
