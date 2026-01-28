@@ -120,24 +120,11 @@ this.applyDepthRelatedToTransparent(loadedObj);
 
 ## 사용 예시
 
-### 3D ModelLoader 컴포넌트
-
 ```javascript
 class PDUModel extends WV3DResourceComponent {
     constructor() {
         super();
         ComponentMixin.applyModelLoaderMixin(this);
-    }
-
-    // selectItem 변경 시 자동 호출
-    async _onCommitProperties() {
-        await this.startLoadResource();
-    }
-
-    // 리소스 로드 완료 후 호출
-    _onValidateResource() {
-        console.log('모델 로드 완료');
-        this.setupInteractions();
     }
 }
 ```

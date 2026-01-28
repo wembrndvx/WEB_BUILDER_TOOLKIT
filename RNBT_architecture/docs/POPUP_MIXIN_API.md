@@ -6,480 +6,357 @@ Shadow DOM 기반 팝업 시스템. 차트(ECharts), 테이블(Tabulator) 통합
 
 ## 개요
 
+3D 컴포넌트 클릭 시 상세 정보를 Shadow DOM 팝업으로 표시.
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  PopupMixin 구성                                             │
-│                                                              │
-│  applyShadowPopupMixin ─── 기본 팝업 (필수)                   │
-│           │                                                  │
-│           ├── applyEChartsMixin ─── 차트 기능 (선택)          │
-│           │                                                  │
-│           └── applyTabulatorMixin ─── 테이블 기능 (선택)      │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+3D 오브젝트 클릭 → showDetail() → 팝업 표시 + 데이터 로드 → 렌더링
 ```
 
-**호출 순서:** applyShadowPopupMixin → applyEChartsMixin/applyTabulatorMixin
+---
+
+## 빠른 시작 (PDU 예제)
+
+### 1단계: Mixin 임포트 및 적용
+
+```javascript
+const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
+
+// 팝업 기본 설정
+applyShadowPopupMixin(this, {
+    getHTML: () => this.getPopupHTML(),
+    getStyles: () => this.getPopupStyles(),
+    onCreated: () => this.onPopupCreated(),
+});
+
+// 차트 사용 시
+applyEChartsMixin(this);
+
+// 테이블 사용 시
+applyTabulatorMixin(this);
+```
+
+### 2단계: HTML/CSS 제공 함수
+
+publishCode에서 템플릿 추출:
+
+```javascript
+function extractTemplate(htmlCode, templateId) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlCode, 'text/html');
+    const template = doc.querySelector(`template#${templateId}`);
+    return template?.innerHTML || '';
+}
+
+const { htmlCode, cssCode } = this.properties.publishCode || {};
+
+this.getPopupHTML = () => extractTemplate(htmlCode, 'popup-pdu');
+this.getPopupStyles = () => cssCode || '';
+```
+
+### 3단계: 팝업 생성 콜백
+
+```javascript
+this.onPopupCreated = function() {
+    // 차트 생성
+    this.createChart('.chart-container');
+
+    // 테이블 생성
+    this.createTable('.table-container', {
+        columns: [
+            { title: 'Name', field: 'name' },
+            { title: 'Value', field: 'value' }
+        ]
+    });
+
+    // 이벤트 바인딩
+    this.bindPopupEvents({
+        click: {
+            '.close-btn': () => this.hidePopup(),
+            '.tab-btn': (e) => this.switchTab(e.target.dataset.tab)
+        }
+    });
+};
+```
+
+### 4단계: Public Methods
+
+```javascript
+// 팝업 표시 + 데이터 로드
+this.showDetail = function() {
+    this.showPopup();
+
+    fetchData(this.page, 'assetDetail', { assetKey: this.assetKey })
+        .then((response) => {
+            this.renderInfo(response);
+            this.updateChart('.chart-container', chartOption);
+            this.updateTable('.table-container', tableData);
+        });
+};
+
+// 팝업 숨김
+this.hideDetail = function() {
+    this.hidePopup();
+};
+```
 
 ---
 
 ## applyShadowPopupMixin
 
-기본 Shadow DOM 팝업 기능.
-
-### 적용
-
-```javascript
-const { applyShadowPopupMixin } = PopupMixin;
-
-applyShadowPopupMixin(this, {
-    getHTML: () => `
-        <div class="popup-container">
-            <h2>팝업 제목</h2>
-            <div class="content"></div>
-        </div>
-    `,
-    getStyles: () => `
-        .popup-container {
-            position: fixed;
-            background: white;
-            padding: 20px;
-        }
-    `,
-    onCreated: (shadowRoot) => {
-        console.log('팝업 생성 완료');
-    }
-});
-```
+기본 Shadow DOM 팝업.
 
 ### 옵션
 
-| 옵션 | 타입 | 설명 |
-|------|------|------|
-| `getHTML` | `() => string` | 팝업 HTML 반환 함수 |
-| `getStyles` | `() => string` | 팝업 CSS 반환 함수 |
-| `onCreated` | `(shadowRoot) => void` | 생성 완료 콜백 (선택) |
-
----
-
-### 추가되는 메서드
-
-#### createPopup()
-
-Shadow DOM 팝업 생성.
-
 ```javascript
-/**
- * @returns {ShadowRoot} - 생성된 Shadow Root
- */
-const shadowRoot = this.createPopup();
-```
-
-**동작:**
-1. 호스트 `<div>` 생성 (`popup-${instance.id}`)
-2. Shadow DOM 연결 (`mode: 'open'`)
-3. 스타일 + HTML 삽입
-4. `instance.page.appendElement`에 추가
-5. `onCreated` 콜백 호출
-
----
-
-#### showPopup()
-
-팝업 표시.
-
-```javascript
-this.showPopup();
-// host.style.display = 'block'
-```
-
-**팝업이 없으면 자동 생성.**
-
----
-
-#### hidePopup()
-
-팝업 숨김.
-
-```javascript
-this.hidePopup();
-// host.style.display = 'none'
-```
-
----
-
-#### popupQuery(selector)
-
-Shadow DOM 내부 요소 선택.
-
-```javascript
-/**
- * @param {string} selector - CSS 선택자
- * @returns {Element|null}
- */
-const title = this.popupQuery('.popup-title');
-```
-
----
-
-#### popupQueryAll(selector)
-
-Shadow DOM 내부 요소 모두 선택.
-
-```javascript
-/**
- * @param {string} selector - CSS 선택자
- * @returns {NodeList}
- */
-const buttons = this.popupQueryAll('.btn');
-```
-
----
-
-#### bindPopupEvents(events)
-
-이벤트 델리게이션 바인딩.
-
-```javascript
-/**
- * @param {Object} events - { eventType: { selector: handler } }
- */
-this.bindPopupEvents({
-    click: {
-        '.close-btn': (e) => this.hidePopup(),
-        '.save-btn': (e) => this.saveData()
-    },
-    change: {
-        'select': (e) => this.handleSelect(e)
-    }
+applyShadowPopupMixin(this, {
+    getHTML: () => string,      // 팝업 HTML
+    getStyles: () => string,    // 팝업 CSS
+    onCreated: (shadowRoot) => void  // 생성 완료 콜백 (선택)
 });
 ```
 
----
+### 제공 메서드
 
-#### destroyPopup()
+| 메서드 | 설명 |
+|--------|------|
+| `createPopup()` | 팝업 생성 (자동 호출됨) |
+| `showPopup()` | 팝업 표시 |
+| `hidePopup()` | 팝업 숨김 |
+| `popupQuery(selector)` | Shadow DOM 내 요소 선택 |
+| `popupQueryAll(selector)` | Shadow DOM 내 모든 요소 선택 |
+| `bindPopupEvents(events)` | 이벤트 바인딩 |
+| `destroyPopup()` | 팝업 및 리소스 정리 |
 
-팝업 및 리소스 정리.
+### popupQuery 사용
 
 ```javascript
-this.destroyPopup();
+// 단일 요소
+const title = this.popupQuery('.pdu-name');
+title.textContent = 'PDU-001';
+
+// 여러 요소
+const buttons = this.popupQueryAll('.tab-btn');
+fx.each((btn) => btn.classList.remove('active'), buttons);
 ```
 
-**정리 대상:**
-- 바인딩된 이벤트 리스너
-- DOM 요소 제거
-- (EChartsMixin 사용 시) 차트 dispose
-- (TabulatorMixin 사용 시) 테이블 destroy
-
----
-
-### 내부 상태
+### bindPopupEvents 사용
 
 ```javascript
-instance._popup = {
-    host: HTMLDivElement,      // Shadow DOM 호스트
-    shadowRoot: ShadowRoot,    // Shadow Root
-    eventCleanups: Function[]  // 이벤트 정리 함수 배열
-};
+this.bindPopupEvents({
+    click: {
+        '.close-btn': () => this.hidePopup(),
+        '.tab-btn': (e) => this.switchTab(e.target.dataset.tab),
+        '.refresh-btn': () => this.refreshData()
+    },
+    change: {
+        'select.filter': (e) => this.applyFilter(e.target.value)
+    }
+});
 ```
 
 ---
 
 ## applyEChartsMixin
 
-ECharts 차트 관리 (applyShadowPopupMixin 이후 호출).
+ECharts 차트 관리. `applyShadowPopupMixin` 이후 호출.
 
-### 적용
+### 제공 메서드
 
-```javascript
-const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
+| 메서드 | 설명 |
+|--------|------|
+| `createChart(selector)` | 차트 인스턴스 생성 |
+| `getChart(selector)` | 차트 인스턴스 조회 |
+| `updateChart(selector, option)` | 차트 옵션 업데이트 |
 
-applyShadowPopupMixin(this, { ... });
-applyEChartsMixin(this);
-```
-
----
-
-### 추가되는 메서드
-
-#### createChart(selector)
-
-ECharts 인스턴스 생성.
+### 사용 예시
 
 ```javascript
-/**
- * @param {string} selector - 차트 컨테이너 선택자
- * @returns {ECharts|null}
- */
-const chart = this.createChart('.chart-container');
-chart.setOption({ ... });
-```
+// onPopupCreated에서 차트 생성
+this.createChart('.chart-container');
 
-**자동 기능:**
-- ResizeObserver로 컨테이너 크기 변경 시 자동 resize
-
----
-
-#### getChart(selector)
-
-차트 인스턴스 조회.
-
-```javascript
-const chart = this.getChart('.chart-container');
-```
-
----
-
-#### updateChart(selector, option)
-
-차트 옵션 업데이트.
-
-```javascript
-/**
- * @param {string} selector - 차트 컨테이너 선택자
- * @param {Object} option - ECharts 옵션
- */
+// 데이터 로드 후 업데이트
 this.updateChart('.chart-container', {
-    series: [{ data: newData }]
+    xAxis: { data: ['Mon', 'Tue', 'Wed'] },
+    series: [{ type: 'line', data: [120, 200, 150] }]
 });
 ```
 
----
-
-### 내부 상태
+### Chart Config 패턴
 
 ```javascript
-instance._popup.charts = Map<selector, {
-    chart: ECharts,
-    resizeObserver: ResizeObserver
-}>;
+this.chartConfig = {
+    xKey: 'timestamps',
+    styleMap: {
+        power: { label: '전력', unit: 'kW', color: '#3b82f6', smooth: true },
+        current: { label: '전류', unit: 'A', color: '#f59e0b', smooth: true },
+    },
+    optionBuilder: getChartOption,  // 옵션 생성 함수
+};
+
+// 렌더링 시
+const option = this.chartConfig.optionBuilder(this.chartConfig, data);
+this.updateChart('.chart-container', option);
 ```
 
 ---
 
 ## applyTabulatorMixin
 
-Tabulator 테이블 관리 (applyShadowPopupMixin 이후 호출).
+Tabulator 테이블 관리. `applyShadowPopupMixin` 이후 호출.
 
-### 적용
+### 제공 메서드
 
-```javascript
-const { applyShadowPopupMixin, applyTabulatorMixin } = PopupMixin;
+| 메서드 | 설명 |
+|--------|------|
+| `createTable(selector, options)` | 테이블 인스턴스 생성 |
+| `getTable(selector)` | 테이블 인스턴스 조회 |
+| `isTableReady(selector)` | 초기화 완료 여부 |
+| `updateTable(selector, data)` | 테이블 데이터 업데이트 |
+| `updateTableOptions(selector, options)` | 컬럼 등 옵션 변경 |
 
-applyShadowPopupMixin(this, { ... });
-applyTabulatorMixin(this);
-```
-
----
-
-### 추가되는 메서드
-
-#### createTable(selector, options?)
-
-Tabulator 인스턴스 생성.
+### 사용 예시
 
 ```javascript
-/**
- * @param {string} selector - 테이블 컨테이너 선택자
- * @param {Object} [options] - Tabulator 옵션
- * @returns {Tabulator|null}
- */
-const table = this.createTable('.table-container', {
+// onPopupCreated에서 테이블 생성
+this.createTable('.table-container', {
     columns: [
+        { title: 'ID', field: 'id' },
         { title: 'Name', field: 'name' },
-        { title: 'Age', field: 'age' }
+        { title: 'Status', field: 'status',
+          formatter: (cell) => {
+              const value = cell.getValue();
+              const color = value === 'active' ? '#22c55e' : '#888';
+              return `<span style="color:${color}">${value}</span>`;
+          }
+        }
     ],
-    data: initialData
-});
-```
-
-**자동 기능:**
-- Tabulator CSS 자동 주입 (midnight 테마)
-- ResizeObserver로 자동 redraw
-- tableBuilt 이벤트로 초기화 완료 감지
-
-**기본 옵션:**
-```javascript
-{
     layout: 'fitColumns',
-    responsiveLayout: 'collapse'
-}
-```
+    placeholder: 'No data'
+});
 
----
-
-#### getTable(selector)
-
-테이블 인스턴스 조회.
-
-```javascript
-const table = this.getTable('.table-container');
-```
-
----
-
-#### isTableReady(selector)
-
-테이블 초기화 완료 여부.
-
-```javascript
-if (this.isTableReady('.table-container')) {
-    this.updateTable('.table-container', newData);
-}
-```
-
----
-
-#### updateTable(selector, data)
-
-테이블 데이터 업데이트.
-
-```javascript
-/**
- * @param {string} selector - 테이블 컨테이너 선택자
- * @param {Array} data - 테이블 데이터
- */
+// 데이터 로드 후 업데이트
 this.updateTable('.table-container', [
-    { name: 'John', age: 30 },
-    { name: 'Jane', age: 25 }
+    { id: 1, name: 'Circuit 1', status: 'active' },
+    { id: 2, name: 'Circuit 2', status: 'inactive' }
 ]);
 ```
 
----
-
-#### updateTableOptions(selector, options)
-
-테이블 옵션 업데이트.
+### Table Config 패턴
 
 ```javascript
-/**
- * @param {string} selector - 테이블 컨테이너 선택자
- * @param {Object} options - 업데이트할 옵션 (columns, data)
- */
-this.updateTableOptions('.table-container', {
-    columns: newColumns,
-    data: newData
-});
+this.tableConfig = {
+    selector: '.table-container',
+    columns: [
+        { title: 'ID', field: 'id' },
+        { title: 'Name', field: 'name' },
+    ],
+    optionBuilder: (columns) => ({
+        layout: 'fitColumns',
+        placeholder: 'No data',
+        columns
+    })
+};
+
+// onPopupCreated에서
+const options = this.tableConfig.optionBuilder(this.tableConfig.columns);
+this.createTable(this.tableConfig.selector, options);
 ```
 
----
+### Shadow DOM CSS 자동 주입
 
-### Shadow DOM CSS 주입
-
-Shadow DOM은 외부 스타일시트와 격리됩니다.
-
-**자동 처리:**
-- `createTable()` 호출 시 Tabulator CSS 자동 fetch & 주입
-- 경로: `client/common/libs/tabulator/tabulator_midnight.min.css`
+Tabulator CSS가 자동으로 Shadow DOM에 주입됩니다.
 - 테마: midnight (다크 모드)
+- 경로: `client/common/libs/tabulator/tabulator_midnight.min.css`
 
 ---
 
-### 내부 상태
+## 전체 구조 예시 (PDU)
 
 ```javascript
-instance._popup.tables = Map<selector, {
-    table: Tabulator,
-    resizeObserver: ResizeObserver,
-    state: { initialized: boolean }
-}>;
-instance._popup.tabulatorCssInjected = boolean;
-```
+const { bind3DEvents, fetchData } = Wkit;
+const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
 
----
+initComponent.call(this);
 
-## 사용 예시
+function initComponent() {
+    // 1. 데이터 설정
+    this.datasetInfo = [
+        { datasetName: 'assetDetail', render: ['renderInfo'] },
+        { datasetName: 'circuits', render: ['renderTable'] },
+    ];
 
-### 차트 + 테이블 팝업
+    // 2. Config 정의
+    this.tableConfig = {
+        selector: '.table-container',
+        columns: [...],
+        optionBuilder: getTableOption,
+    };
 
-```javascript
-class UPSPopup {
-    constructor() {
-        const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
+    // 3. 렌더링 함수 바인딩
+    this.renderInfo = renderInfo.bind(this);
+    this.renderTable = renderTable.bind(this);
 
-        applyShadowPopupMixin(this, {
-            getHTML: () => `
-                <div class="popup">
-                    <button class="close-btn">×</button>
-                    <div class="chart-container"></div>
-                    <div class="table-container"></div>
-                </div>
-            `,
-            getStyles: () => `
-                .popup { ... }
-                .chart-container { height: 200px; }
-                .table-container { height: 300px; }
-            `,
-            onCreated: () => this.initWidgets()
-        });
+    // 4. Public Methods
+    this.showDetail = showDetail.bind(this);
+    this.hideDetail = hideDetail.bind(this);
 
-        applyEChartsMixin(this);
-        applyTabulatorMixin(this);
-    }
+    // 5. 3D 이벤트
+    this.customEvents = { click: '@assetClicked' };
+    bind3DEvents(this, this.customEvents);
 
-    initWidgets() {
-        // 차트 생성
-        this.createChart('.chart-container');
-        this.updateChart('.chart-container', {
-            xAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed'] },
-            yAxis: { type: 'value' },
-            series: [{ type: 'bar', data: [120, 200, 150] }]
-        });
+    // 6. 팝업 설정
+    const { htmlCode, cssCode } = this.properties.publishCode || {};
 
-        // 테이블 생성
-        this.createTable('.table-container', {
-            columns: [
-                { title: 'ID', field: 'id' },
-                { title: 'Status', field: 'status' }
-            ]
-        });
+    applyShadowPopupMixin(this, {
+        getHTML: () => extractTemplate(htmlCode, 'popup-pdu'),
+        getStyles: () => cssCode,
+        onCreated: () => onPopupCreated.call(this),
+    });
 
-        // 이벤트 바인딩
-        this.bindPopupEvents({
-            click: {
-                '.close-btn': () => this.hidePopup()
-            }
-        });
-    }
+    applyEChartsMixin(this);
+    applyTabulatorMixin(this);
+}
 
-    updateData(chartData, tableData) {
-        this.updateChart('.chart-container', {
-            series: [{ data: chartData }]
-        });
-        this.updateTable('.table-container', tableData);
-    }
+function onPopupCreated() {
+    this.createChart('.chart-container');
+    this.createTable('.table-container', this.tableConfig.optionBuilder(this.tableConfig.columns));
+    this.bindPopupEvents({
+        click: {
+            '.close-btn': () => this.hideDetail(),
+        }
+    });
+}
 
-    destroy() {
-        this.destroyPopup();  // 차트, 테이블, 이벤트 모두 정리
-    }
+function showDetail() {
+    this.showPopup();
+
+    fx.go(
+        this.datasetInfo,
+        fx.each(({ datasetName, render }) =>
+            fetchData(this.page, datasetName, { assetKey: this._assetKey })
+                .then((res) => fx.each((fn) => this[fn](res), render))
+        )
+    );
+}
+
+function hideDetail() {
+    this.hidePopup();
 }
 ```
 
 ---
 
-## 표시/숨김 커스터마이징
+## 리소스 정리
 
-기본 방식:
+`destroyPopup()` 호출 시 자동 정리:
+- 바인딩된 이벤트 리스너
+- ECharts 인스턴스 + ResizeObserver
+- Tabulator 인스턴스 + ResizeObserver
+- Shadow DOM 호스트
+
 ```javascript
-showPopup() → host.style.display = 'block'
-hidePopup() → host.style.display = 'none'
-```
-
-다른 방식 필요 시 (opacity, transform 등):
-```javascript
-// 메서드 오버라이드
-instance.showPopup = function() {
-    if (!instance._popup.host) instance.createPopup();
-    instance._popup.host.style.opacity = '1';
-    instance._popup.host.style.transform = 'translateY(0)';
-};
-
-instance.hidePopup = function() {
-    if (instance._popup.host) {
-        instance._popup.host.style.opacity = '0';
-        instance._popup.host.style.transform = 'translateY(-20px)';
-    }
-};
+// beforeDestroy에서
+this.destroyPopup();
 ```
 
 ---
@@ -487,4 +364,5 @@ instance.hidePopup = function() {
 ## 관련 문서
 
 - [COMPONENT_MIXIN_API.md](/RNBT_architecture/docs/COMPONENT_MIXIN_API.md) - 컴포넌트 Mixin
-- [README.md - 부록 E: PopupMixin 패턴](/RNBT_architecture/README.md#부록-e-popupmixin-패턴)
+- [WKIT_API.md](/RNBT_architecture/docs/WKIT_API.md) - bind3DEvents, fetchData
+- [Projects/ECO/page/components/PDU](/RNBT_architecture/Projects/ECO/page/components/PDU) - 구현 예제
