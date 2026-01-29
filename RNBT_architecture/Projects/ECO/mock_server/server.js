@@ -680,5 +680,6 @@ app.listen(PORT, () => {
     console.log(`  POST /api/v1/rel/l      - Relation list (all)`);
     console.log(`  POST /api/v1/rel/la     - Relation list (paged)`);
     console.log(`  POST /api/v1/rel/g      - Relation single`);
+    console.log(`  POST /api/v1/mh/gl      - Metric latest (per asset)`);
     console.log(`\n`);
 });

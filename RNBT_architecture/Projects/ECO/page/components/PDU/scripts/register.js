@@ -10,7 +10,7 @@
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
 
-const BASE_URL = 'http://10.23.128.140:8811';
+const BASE_URL = 'http://10.23.128.125:4004';
 
 // ======================
 // TEMPLATE HELPER

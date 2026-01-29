@@ -9,7 +9,7 @@
         {
           "param_name": "baseUrl",
           "param_type": "string",
-          "default_value": "http://10.23.128.140:8811"
+          "default_value": "http://10.23.128.125:4004"
         }
       ],
       "data_type": "1",
@@ -30,7 +30,7 @@
         {
           "param_name": "baseUrl",
           "param_type": "string",
-          "default_value": "http://10.23.128.140:8811"
+          "default_value": "http://10.23.128.125:4004"
         },
         {
           "param_name": "page",
@@ -61,7 +61,7 @@
         {
           "param_name": "baseUrl",
           "param_type": "string",
-          "default_value": "http://10.23.128.140:8811"
+          "default_value": "http://10.23.128.125:4004"
         },
         {
           "param_name": "assetKey",
@@ -87,7 +87,7 @@
         {
           "param_name": "baseUrl",
           "param_type": "string",
-          "default_value": "http://10.23.128.140:8811"
+          "default_value": "http://10.23.128.125:4004"
         },
         {
           "param_name": "relationType",
@@ -113,7 +113,7 @@
         {
           "param_name": "baseUrl",
           "param_type": "string",
-          "default_value": "http://10.23.128.140:8811"
+          "default_value": "http://10.23.128.125:4004"
         },
         {
           "param_name": "toAssetKey",
@@ -144,7 +144,7 @@
         {
           "param_name": "baseUrl",
           "param_type": "string",
-          "default_value": "http://10.23.128.140:8811"
+          "default_value": "http://10.23.128.125:4004"
         },
         {
           "param_name": "fromAssetKey",
@@ -170,7 +170,7 @@
         {
           "param_name": "baseUrl",
           "param_type": "string",
-          "default_value": "http://10.23.128.140:8811"
+          "default_value": "http://10.23.128.125:4004"
         },
         {
           "param_name": "assetKey",
@@ -201,7 +201,7 @@
         {
           "param_name": "baseUrl",
           "param_type": "string",
-          "default_value": "http://10.23.128.140:8811"
+          "default_value": "http://10.23.128.125:4004"
         },
         {
           "param_name": "assetKey",

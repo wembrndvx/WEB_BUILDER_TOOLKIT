@@ -17,7 +17,7 @@ const { subscribe } = GlobalDataPublisher;
 const { bindEvents, fetchData } = Wkit;
 const { each, go, map, filter } = fx;
 
-const BASE_URL = 'http://10.23.128.140:8811';
+const BASE_URL = 'http://10.23.128.125:4004';
 
 initComponent.call(this);
 
