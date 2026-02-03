@@ -835,16 +835,40 @@ function generateCRACMetrics(eventedAt) {
 
 function generateUPSMetricsData(eventedAt) {
     const metrics = [];
+
+    // 3상 입력 값 생성 및 저장
+    const inputV = [], inputF = [], inputA = [];
     for (let i = 1; i <= 3; i++) {
-        metrics.push({ metricCode: `UPS.INPUT_V_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 2180 + Math.round(Math.random() * 40) });
-        metrics.push({ metricCode: `UPS.INPUT_F_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 599 + Math.round(Math.random() * 2) });
-        metrics.push({ metricCode: `UPS.INPUT_A_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 50 + Math.round(Math.random() * 100) });
+        const v = 2180 + Math.round(Math.random() * 40);
+        const f = 599 + Math.round(Math.random() * 2);
+        const a = 50 + Math.round(Math.random() * 100);
+        inputV.push(v); inputF.push(f); inputA.push(a);
+        metrics.push({ metricCode: `UPS.INPUT_V_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: v });
+        metrics.push({ metricCode: `UPS.INPUT_F_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: f });
+        metrics.push({ metricCode: `UPS.INPUT_A_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: a });
     }
+
+    // 3상 출력 값 생성 및 저장
+    const outputV = [], outputF = [], outputA = [];
     for (let i = 1; i <= 3; i++) {
-        metrics.push({ metricCode: `UPS.OUTPUT_V_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 2200 + Math.round(Math.random() * 10) });
-        metrics.push({ metricCode: `UPS.OUTPUT_F_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 600 });
-        metrics.push({ metricCode: `UPS.OUTPUT_A_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 40 + Math.round(Math.random() * 80) });
+        const v = 2200 + Math.round(Math.random() * 10);
+        const f = 600;
+        const a = 40 + Math.round(Math.random() * 80);
+        outputV.push(v); outputF.push(f); outputA.push(a);
+        metrics.push({ metricCode: `UPS.OUTPUT_V_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: v });
+        metrics.push({ metricCode: `UPS.OUTPUT_F_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: f });
+        metrics.push({ metricCode: `UPS.OUTPUT_A_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: a });
     }
+
+    // 평균값 계산 (DERIVED)
+    const avg = arr => Math.round(arr.reduce((a, b) => a + b, 0) / arr.length * 10) / 10;
+    metrics.push({ metricCode: 'UPS.INPUT_V_AVG', eventedAt, valueType: 'NUMBER', valueNumber: avg(inputV) });
+    metrics.push({ metricCode: 'UPS.INPUT_F_AVG', eventedAt, valueType: 'NUMBER', valueNumber: avg(inputF) });
+    metrics.push({ metricCode: 'UPS.INPUT_A_AVG', eventedAt, valueType: 'NUMBER', valueNumber: avg(inputA) });
+    metrics.push({ metricCode: 'UPS.OUTPUT_V_AVG', eventedAt, valueType: 'NUMBER', valueNumber: avg(outputV) });
+    metrics.push({ metricCode: 'UPS.OUTPUT_F_AVG', eventedAt, valueType: 'NUMBER', valueNumber: avg(outputF) });
+    metrics.push({ metricCode: 'UPS.OUTPUT_A_AVG', eventedAt, valueType: 'NUMBER', valueNumber: avg(outputA) });
+
     metrics.push({ metricCode: 'UPS.BATT_V', eventedAt, valueType: 'NUMBER', valueNumber: 4800 + Math.round(Math.random() * 200) });
     metrics.push({ metricCode: 'UPS.BATT_A', eventedAt, valueType: 'NUMBER', valueNumber: 10 + Math.round(Math.random() * 50) });
     metrics.push({ metricCode: 'UPS.LOAD_PCT', eventedAt, valueType: 'NUMBER', valueNumber: 40 + Math.round(Math.random() * 40) });
