@@ -116,6 +116,8 @@
 | 입/출력전압 | `UPS.INPUT_V_1~3` | `UPS.OUTPUT_V_1~3` | V |
 | 입/출력 주파수 | `UPS.INPUT_F_1~3` | `UPS.OUTPUT_F_1~3` | Hz |
 
+> **참고**: 축약 메트릭(`INPUT_V_AVG`, `INPUT_A_SUM`, `OUTPUT_V_AVG`, `OUTPUT_F_AVG`, `OUTPUT_A_SUM`)과 파생 메트릭(`INPUT_POWER_KW`, `OUTPUT_POWER_KW`)도 metricConfig에 정의됨. 차트에서 3상 개별 대신 축약값을 사용할 수 있음.
+
 ### API 호출
 
 ```
@@ -170,7 +172,7 @@ POST /api/v1/mhs/l
 |------|------|-----------|----------|
 | 배터리 사용률 (SOC, State of Charge: 배터리 잔존 충전량 비율) | 메트릭 | metricConfig에 `UPS.BATT_SOC` 코드 미정의. 장비가 직접 보고하는 SOC 메트릭이 없음 | metricConfig에 `UPS.BATT_SOC` 추가 + mock server. **대체**: 배터리 전압(`UPS.BATT_V`)으로 표시 |
 | 배터리 잔여시간 | 메트릭 | metricConfig에 `UPS.BATT_REMAIN_TIME` 코드 미정의. 장비가 직접 보고하는 잔여시간 메트릭이 없음 | metricConfig에 `UPS.BATT_REMAIN_TIME` 추가 + mock server. **대체**: 배터리 상태(`UPS.BATT_CHARGING`, `UPS.OUTPUT_ON_BATTERY`)로 표시 |
-| 부하율 | 메트릭 | metricConfig에 `UPS.LOAD_RATE` 코드 미정의. 장비가 직접 보고하는 부하율 메트릭이 없음 (프론트 계산은 이론상 가능: OUTPUT_V × OUTPUT_A / 정격용량) | metricConfig에 `UPS.LOAD_RATE` 추가 + mock server. **대체**: 출력전류(`UPS.OUTPUT_A_1~3`)로 표시 |
+| 부하율 | 메트릭 | metricConfig에 `UPS.LOAD_RATE` 코드 미정의. 장비가 직접 보고하는 부하율 메트릭이 없음 | metricConfig에 `UPS.LOAD_RATE` 추가 + mock server. **대체**: `UPS.OUTPUT_POWER_KW` / 정격용량(properties.rated_capacity)으로 프론트 계산 가능 |
 | 용도 | 속성 | `ast/gx` 기본정보에 용도 전용 필드 미존재 (API 요청 완료) | `asset.usageLabel`로 제공 예정 (필드명 미정) |
 
 ---
