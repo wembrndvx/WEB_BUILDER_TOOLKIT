@@ -218,6 +218,57 @@
       "dataset_id": "mh-latest-001",
       "name": "metricLatest",
       "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/mh/gl\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"assetKey\\\":\\\"#{assetKey}\\\"}\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "baseUrl",
+          "param_type": "string",
+          "default_value": "10.23.128.125:4004"
+        },
+        {
+          "param_name": "assetKey",
+          "param_type": "string",
+          "default_value": "ups-001"
+        },
+        {
+          "param_name": "interval",
+          "param_type": "string",
+          "default_value": "1h"
+        },
+        {
+          "param_name": "metricCodes",
+          "param_type": "string",
+          "default_value": "SENSOR.TEMP,SENSOR.HUMIDITY"
+        },
+        {
+          "param_name": "timeFrom",
+          "param_type": "string",
+          "default_value": "2025-01-01T00:00:00Z"
+        },
+        {
+          "param_name": "timeTo",
+          "param_type": "string",
+          "default_value": "2025-01-01T23:59:59Z"
+        },
+        {
+          "param_name": "statsKeys",
+          "param_type": "string",
+          "default_value": "avg,min,max"
+        }
+      ],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Metric API v1 - 메트릭 통계 기간 리스트 조회 (트렌드 차트용)",
+      "dataset_id": "mhs-list-001",
+      "name": "metricHistoryStats",
+      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/mhs/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"assetKey\\\":\\\"#{assetKey}\\\",\\\"interval\\\":\\\"#{interval}\\\",\\\"metricCodes\\\":[#{metricCodes}],\\\"timeFrom\\\":\\\"#{timeFrom}\\\",\\\"timeTo\\\":\\\"#{timeTo}\\\"},\\\"statsKeys\\\":[#{statsKeys}],\\\"sort\\\":[]}\"}"
     }
   ],
   "datasource": []
