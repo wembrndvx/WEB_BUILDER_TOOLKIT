@@ -129,7 +129,7 @@ ComponentMixin.applyModelLoaderMixin = function(instance) {
    */
   instance.applyDepthRelatedToTransparent = function(obj) {
     obj.traverse((obj) => {
-      if (obj.isMesh && obj.material.trasparent) {
+      if (obj.isMesh && obj.material.transparent) {
         obj.material.depthWrite = false;
         obj.material.depthTest = true;
         obj.material.needsUpdate = true;
